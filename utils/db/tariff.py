@@ -10,10 +10,10 @@ class Tariffs(Base):
     __tablename__ = 'tariffs'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tariffs_name = Column(String(255), nullable=False)
-    # tariffs_name_uzb = Column(String(255), nullable=True)
+    tariff_name = Column(String(255), nullable=False)
+    tariff_name_uzb = Column(String(255), nullable=True)
     description = Column(Text(), nullable=True)
-    # description_uzb = Column(Text(), nullable=True)
+    description_uzb = Column(Text(), nullable=True)
     price = Column(Integer(), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -22,9 +22,10 @@ class Tariffs(Base):
     # Связь с User (обратная ссылка)
     user = relationship("Users", back_populates="tariffs", uselist=False)
 
-    def __init__(self, tariffs_name, price, description, **kw: Any):
+    def __init__(self, tariff_name, tariff_name_uzb, price, description, **kw: Any):
         super().__init__(**kw)
-        self.tariffs_name = tariffs_name
+        self.tariff_name = tariff_name
+        self.tariff_name_uzb = tariff_name_uzb
         self.description = description
         self.price = price
 
@@ -36,7 +37,7 @@ class Tariffs(Base):
         return ""
 
     def __str__(self) -> str:
-        return f"<tariff:{self.tariffs_name}>"
+        return f"<tariff:{self.tariff_name}>"
 
     def __repr__(self):
         return self.__str__()
@@ -52,7 +53,7 @@ class Tariffs(Base):
         async with session_maker() as session:
             async with session.begin():
                 result = await session.execute(
-                    select(Tariffs.tariffs_name)
+                    select(Tariffs.tariff_name)
                     .filter(Tariffs.id == id)  # type: ignore
                 )
                 return result.scalars().one_or_none()
@@ -85,11 +86,12 @@ class Tariffs(Base):
                 else:
                     # Тариф не найден
                     raise ValueError(f"Тариф с таким {tariff_id} не найден!")
+
     @staticmethod
-    async def get_tariff_from_name(tariffs_name: str, session_maker: sessionmaker):
+    async def get_tariff_from_name(tariff_name: str, session_maker: sessionmaker):
         """
         Получить тариф по его имени
-        :param tariffs_name:
+        :param tariff_name:
         :param session_maker:
         :return:
         """
@@ -97,7 +99,7 @@ class Tariffs(Base):
             async with session.begin():
                 result = await session.execute(
                     select(Tariffs)
-                    .filter(Tariffs.tariffs_name == tariffs_name)  # type: ignore
+                    .filter(Tariffs.tariff_name == tariff_name)  # type: ignore
                 )
                 return result.scalars().one_or_none()
 
@@ -111,17 +113,21 @@ class Tariffs(Base):
         async with session_maker() as session:
             async with session.begin():
                 result = await session.execute(select(Tariffs).distinct())
-                tariffs_name = [row[0] for row in result]
-                return tariffs_name
+                tariff_name = [row[0] for row in result]
+                return tariff_name
 
     @staticmethod
-    async def create_tariff(tariffs_name: str, price: bool, description: str,
+    async def create_tariff(tariff_name: str, tariff_name_uzb: str,
+                            description_uzb: str, price: bool,
+                            description: str,
                             session_maker: sessionmaker, ) -> None:
         async with session_maker() as session:
             async with session.begin():
                 tariff = Tariffs(
-                    tariffs_name=tariffs_name,
+                    tariff_name=tariff_name,
+                    tariff_name_uzb=tariff_name_uzb,
                     description=description,
+                    description_uzb=description_uzb,
                     price=price,
                 )
                 try:

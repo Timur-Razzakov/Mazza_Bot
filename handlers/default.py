@@ -1,25 +1,20 @@
-import asyncio
-
-from aiogram import types, Router, F
+from aiogram import types, Router
 from aiogram.filters import CommandStart, Command
-from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
 from data.translations import _, ru_texts, user_language, uzb_texts
+from handlers.click_cancel_or_back import get_user_language
 from keyboards import default_kb, admin_kb, inline_button
 from keyboards.default_kb import create_default_markup, cancel_markup
 from keyboards.language_keyboard import language, language_inline
-from keyboards.buttons_for_select import checked, markup_watch_video, markup_checked_watching_video
-from keyboards.products_kb import products_kb, get_products, products_user_kb, free_products
+from keyboards.products_kb import products_user_kb, free_products
 from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs
 from loader import bot, dp
-from states.client_data import ClientDataState, FreeCourseState, AllTariffsState
-from states.course_state import CourseState
+from states.client_data import FreeCourseState, AllTariffsState
 from states.help_state import HelpState
-from states.tariff_state import TariffState
 from utils.db import Users
 
 default_router = Router(name=__name__)
@@ -57,8 +52,6 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
     await message.answer("Tilni tanlang:\nВыберите язык:", reply_markup=language_inline)
 
 
-
-
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message, state: FSMContext, session_maker: sessionmaker, ):
     user_id = message.chat.id
@@ -68,10 +61,11 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
                              reply_markup=admin_kb.markup)
         return
     # Получаем язык пользователя и отправляем соответствующее сообщение
-    selected_language = await Users.get_user(user_id=user_id, session_maker=session_maker)
+    selected_language = await get_user_language(user_id, session_maker)
     if selected_language:
         await message.answer(text=_(ru_texts['bot_greeting'], selected_language),
-                             reply_markup=inline_button.action_for_get_info(user_id), reply=False)
+                             reply_markup=await inline_button.action_for_get_info(user_id, session_maker),
+                             reply=False)
         await message.answer(
             text="👋😃",  # Текст сообщения должен быть непустым, можно использовать пробел
             reply_markup=types.ReplyKeyboardRemove()
@@ -114,15 +108,16 @@ actions = {
 
 
 @default_router.callback_query(lambda query: query.data == 'join_course')
-async def cmd_send_text_media(callback_query: types.CallbackQuery):
+async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker: sessionmaker, ):
     user_id = callback_query.message.chat.id
-    selected_language = user_language.get(user_id, "ru")
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
     text_key, media_type, media_url = actions[callback_query.data]
     await send_media_and_message(user_id, media_type, media_url)
     await bot.send_message(
         chat_id=user_id,
-        text=_(ru_texts[text_key], selected_language),
-        reply_markup=create_default_markup(user_id)
+        text=_(ru_texts[text_key], user_lang),
+        reply_markup=await create_default_markup(user_id, session_maker)
     )
 
 
@@ -138,7 +133,7 @@ relevant_commands = [uzb_texts[key] for key in relevant_keys] + [ru_texts[key] f
 
 @default_router.message(
     lambda message: message.text in relevant_commands)
-async def cmd_answer_for_question(message: types.Message, state: FSMContext):
+async def cmd_answer_for_question(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     """
     Получаем ответ на все кнопки при клике пользователем (кроме бесплатных материалов)
     :param message:
@@ -146,7 +141,8 @@ async def cmd_answer_for_question(message: types.Message, state: FSMContext):
     :return:
     """
     user_id = message.chat.id
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
     # Определение ключа для ответа
     response_key = next((key for key, value in uzb_texts.items() if value == message.text), None)
     if not response_key:
@@ -154,45 +150,49 @@ async def cmd_answer_for_question(message: types.Message, state: FSMContext):
 
     if response_key and response_key in COMMANDS:
         await message.answer(
-            text=_(ru_texts[COMMANDS[response_key]], selected_language),
-            reply_markup=default_kb.create_default_markup(user_id)
+            text=_(ru_texts[COMMANDS[response_key]], user_lang),
+            reply_markup=await default_kb.create_default_markup(user_id, session_maker)
         )
 
 
 @default_router.message(lambda message: message.text in [uzb_texts['help'], ru_texts['help']])
-async def cmd_help(message: types.Message, state: FSMContext):
+async def cmd_help(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     """
     Получаем проблемную ситуацию от пользователя
+    :param session_maker:
     :param message:
     :param state:
     :return:
     """
     user_id = message.chat.id
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
-    await message.answer(text=_(ru_texts['help_request_response'], selected_language),
-                         reply_markup=cancel_markup(user_id))
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    await message.answer(text=_(ru_texts['help_request_response'], user_lang),
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.text)
 
 
 @default_router.message(HelpState.text)
-async def get_messages_from_client(message: types.Message, state: FSMContext):
+async def get_messages_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     help_info = await get_help_text(user_id)
     help_info.text = message.text
     help_info.user_id = message.chat.id
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
-    await message.answer(text=_(ru_texts['enter_contact_info'], selected_language),
-                         reply_markup=cancel_markup(user_id))
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    await message.answer(text=_(ru_texts['enter_contact_info'], user_lang),
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.contact)
 
 
 @default_router.message(HelpState.contact)
-async def get_contact_from_client(message: types.Message, state: FSMContext):
+async def get_contact_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     admin = config.ADMIN_ID[0]
     user_id = message.chat.id
     help_info = await get_help_text(user_id)
     help_info.contact = message.text
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
     message_text = ''
     message_text += "<pre>"
     message_text += "{:<15} : {:<15}\n".format("Contact", help_info.contact)
@@ -202,8 +202,8 @@ async def get_contact_from_client(message: types.Message, state: FSMContext):
     await send_help_text_to_admin(admin, message_text)
     await state.clear()
     await message.answer(
-        text=_(ru_texts['thank_you_for_data'], selected_language),
-        reply_markup=default_kb.create_default_markup(user_id))
+        text=_(ru_texts['thank_you_for_data'], user_lang),
+        reply_markup=await default_kb.create_default_markup(user_id, session_maker))
 
 
 @default_router.message(
@@ -211,7 +211,7 @@ async def get_contact_from_client(message: types.Message, state: FSMContext):
 async def cmd_get_free_materials(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     courses = await free_products(session_maker)
-    keyboard_markup = await products_user_kb(courses, user_id)
+    keyboard_markup = await products_user_kb(courses, user_id, session_maker)
     await bot.send_message(chat_id=user_id,
                            text=ru_texts['choose_courses'],
                            reply_markup=keyboard_markup)
@@ -237,7 +237,7 @@ async def cmd_get_free_materials(message: types.Message, session_maker: sessionm
 async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     tariffs = await get_tariffs(session_maker)
-    keyboard_markup = await tariffs_user_kb(tariffs, user_id)
+    keyboard_markup = await tariffs_user_kb(tariffs, user_id, session_maker)
     await bot.send_message(chat_id=user_id,
                            text=ru_texts['choose_tariffs'],
                            reply_markup=keyboard_markup)
@@ -248,9 +248,9 @@ async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, s
 async def cmd_select_tariff(message: types.Message, state: FSMContext, session_maker: sessionmaker):
     user_id = message.chat.id
     tariff_name = message.text.split(" | ")[0]
-    print(345345, tariff_name)
     if tariff_name == ru_texts['back_for_user']:
-        await message.answer(ru_texts['goodbye'], reply_markup=default_kb.create_default_markup(user_id))
+        await message.answer(ru_texts['goodbye'],
+                             reply_markup=await default_kb.create_default_markup(user_id, session_maker))
         await state.clear()
         return
 

@@ -2,20 +2,24 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class AddTariffState(StatesGroup):
-    tariffs_name = State()
+    tariff_name = State()
+    tariff_name_uzb = State()
     description = State()
+    description_uzb = State()
     price = State()
 
 
 class TariffState(StatesGroup):
-    tariffs_name = State()
+    tariff_name = State()
+    tariff_name_uzb = State()
     description = State()
+    description_uzb = State()
     price = State()
 
 
 class DelTariffState(StatesGroup):
-    tariffs_name = State()
+    tariff_name = State()
 
 
 class UpdateTariffState(StatesGroup):
-    tariffs_name = State()
+    tariff_name = State()

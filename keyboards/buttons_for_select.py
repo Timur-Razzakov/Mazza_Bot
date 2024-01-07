@@ -4,49 +4,47 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from data.translations import ru_texts, user_language, _
+from handlers.click_cancel_or_back import get_user_language
 
 
-def checked(user_id):
+async def checked(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    user_lang = await get_user_language(user_id, session_maker)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=_(ru_texts['agree_without_smile'], selected_language),
+                InlineKeyboardButton(text=_(ru_texts['agree_without_smile'], user_lang),
                                      callback_data="agree"),
-                InlineKeyboardButton(text=_(ru_texts['cancel_without_smile'], selected_language),
+                InlineKeyboardButton(text=_(ru_texts['cancel_without_smile'], user_lang),
                                      callback_data="cancel"),
             ]
         ], resize_keyboard=True,
     )
 
 
-def markup_watch_video(user_id):
+async def markup_watch_video(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    user_lang = await get_user_language(user_id, session_maker)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=_(ru_texts['confirm'], selected_language), callback_data="conf"),
-                InlineKeyboardButton(text=_(ru_texts['confirm_2'], selected_language),
+                InlineKeyboardButton(text=_(ru_texts['confirm'], user_lang), callback_data="conf"),
+                InlineKeyboardButton(text=_(ru_texts['confirm_2'], user_lang),
                                      callback_data="conf_2"),
             ]
         ], resize_keyboard=True,
     )
 
 
-def markup_checked_watching_video(user_id):
+async def markup_checked_watching_video(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    user_lang = await get_user_language(user_id, session_maker)
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=_(ru_texts['watched'], selected_language), callback_data="watched"),
-                InlineKeyboardButton(text=_(ru_texts['not_watched'], selected_language),
+                InlineKeyboardButton(text=_(ru_texts['watched'], user_lang), callback_data="watched"),
+                InlineKeyboardButton(text=_(ru_texts['not_watched'], user_lang),
                                      callback_data="not_watched"),
             ]
         ], resize_keyboard=True,
     )
-
-
-

@@ -1,20 +1,17 @@
 {
   "yes": "Да (Перевод)",
   "no": "Нет (Перевод)",
-
   "tariff_name": "Tarif nomini ko'rsating",
   "tariff_name_must_be_string": "Nom faqat harflardan iborat bo'lishi kerak",
   "saved_thank_you": "Rahmat, ma'lumotlar saqlandi ✅",
   "tariff_price": "Tarif narxini ko'rsating",
   "tariff_description": "Tarif tavsilotlarini ko'rsating",
   "tariff_deleted": "Tarif o'chirildi!",
-
   "product_name": "Kursning nomini ko'rsating",
   "product_description": "Kurs tavsifi ko'rsating",
   "product_deleted": "Kurs o'chirildi!",
   "course_is_free": "Ваш курс бесплатный? (Перевод)",
   "select_tariff": "Tarifni tanlang!",
-
   "already_exists": "Bunday ism bilan allaqachon mavjud",
   "enter_correct_cost": "Iltimos, mahsulotning to'g'ri narxini kiriting (butun son yoki o'nlik kasr).",
   "answer_for_admin": "Siz administrator menyusiga kirdingiz 🤴\n\n",
@@ -53,7 +50,7 @@
   "not_watched": "hali yo'q, tezda ko'rishga yuguraman",
   "check_watching_video": "Video yoqdimi?\n\nTo'liq ko'rib bo'ldingiz degan umiddaman!\n\nBemalol video 1,5-2x qilib ko'rishingiz mumkin.\n\nAytgancha, video ohirida aynan siz uchun tayyorlab qo'ygan bonus haqida gapirib berdim \uD83D\uDE42",
   "tariffs": "\uD83D\uDDD3 Tarif rejalari",
-  "cancel_with_X": "Bekor qilish ❌",
+  "cancel_with_X": "Bekor qilish❌",
   "operation_cancelled": "Operatsiya muvaffaqiyatli bekor qilindi 🙅‍",
   "thank_you_for_data": "Rahmat. Ma'lumotlaringizni oldik, Menejer ko'rib chiqadi! 🤠",
   "help_request_response": "Nima sodir bo’ldi? Iltimos, aytib bering!\n",
@@ -99,5 +96,11 @@
   "card_number": "Karta raqami",
   "expiry_date": "Amal qilish muddati",
   "full_name": "F.I.O.",
-  "warning": "To'lov muvaffaqiyatli amalga oshirilgandan so'ng, ushbu chatga chek/rasmiy qog'ozning suratini yoki faylini yuboring. Chek/rasmiy qog'ozda sana, vaqt va to'lov summasi aniq ko'rsatilishi shart."
+  "warning": "To'lov muvaffaqiyatli amalga oshirilgandan so'ng, ushbu chatga chek/rasmiy qog'ozning suratini yoki faylini yuboring. Chek/rasmiy qog'ozda sana, vaqt va to'lov summasi aniq ko'rsatilishi shart.",
+  "changed_lang": "Язык обновлён (Перевод)",
+  "registration": "Сначала зарегистрируйтесь (Перевод)",
+  "product_name_uzb": "Укажите наименование курса на Узбекском (Перевод)",
+  "description_uzb": "Укажите описание на Узбекском (Перевод)",
+  "get_url": "Введите ссылку для вашего курса (Перевод)",
+"tariff_name_uzb": "Укажите наименование  тарифа на Узбекском (Перевод)"
 }

@@ -2,7 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from data.translations import ru_texts, user_language, _
-from utils.db import Tariffs
+from handlers.click_cancel_or_back import get_user_language
+from utils.db import Tariffs, Users
 
 
 async def get_tariffs(session_maker):
@@ -10,22 +11,42 @@ async def get_tariffs(session_maker):
     return tariffs
 
 
-# Реализована клавиатура для выбора тарифа
-async def tariffs_kb(tariffs, user_id):
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+async def products_kb(products, user_id, session_maker):
+    user_lang = await Users.get_user(user_id=user_id,
+                                     session_maker=session_maker)
     builder = ReplyKeyboardBuilder()  #
-    [builder.button(text=tariff.tariffs_name) for tariff in tariffs]
-    builder.button(text=_(ru_texts['back'], selected_language))
+    if user_lang == 'uzb':
+        [builder.button(text=product.product_name_uzb) for product in products]
+    else:
+        [builder.button(text=product.product_name) for product in products]
+    builder.button(text=_(ru_texts['back'], user_lang))
+    builder.adjust(*[2] * len(products), 1)
+    markup = builder.as_markup(resize_keyboard=True)
+    return markup
+
+
+# Реализована клавиатура для выбора тарифа
+async def tariffs_kb(tariffs, user_id, session_maker):
+    user_lang = await get_user_language(user_id, session_maker)
+    builder = ReplyKeyboardBuilder()  #
+    if user_lang == 'uzb':
+        [builder.button(text=tariff.tariff_name_uzb) for tariff in tariffs]
+    else:
+        [builder.button(text=tariff.tariff_name) for tariff in tariffs]
+    builder.button(text=_(ru_texts['back'], user_lang))
     builder.adjust(*[2] * len(tariffs), 1)
     markup = builder.as_markup(resize_keyboard=True)
     return markup
 
 
-async def tariffs_user_kb(tariffs, user_id):
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+async def tariffs_user_kb(tariffs, user_id, session_maker):
+    user_lang = await get_user_language(user_id, session_maker)
     builder = ReplyKeyboardBuilder()  #
-    [builder.button(text=f"{tariff.tariffs_name} | {tariff.price} UZS") for tariff in tariffs]
-    builder.button(text=_(ru_texts['back_for_user'], selected_language))
+    if user_lang == 'uzb':
+        [builder.button(text=f"{tariff.tariff_name_uzb} | {tariff.price} UZS") for tariff in tariffs]
+    else:
+        [builder.button(text=f"{tariff.tariff_name} | {tariff.price} UZS") for tariff in tariffs]
+    builder.button(text=_(ru_texts['back_for_user'], user_lang))
     builder.adjust(*[2] * len(tariffs), 1)
     markup = builder.as_markup(resize_keyboard=True)
     return markup

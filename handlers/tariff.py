@@ -24,15 +24,19 @@ class TariffData:
     def __init__(self):
         self.user_id = None
         self.tariff_id = None
-        self.tariffs_name = None
+        self.tariff_name = None
+        self.tariff_name_uzb = None
         self.description = None
+        self.description_uzb = None
         self.price = None
 
     def reset(self):
         self.user_id = None
         self.tariff_id = None
-        self.tariffs_name = None
+        self.tariff_name = None
+        self.tariff_name_uzb = None
         self.description = None
+        self.description_uzb = None
         self.price = None
 
 
@@ -53,28 +57,28 @@ async def cmd_add_tariff(message: types.Message, state: FSMContext):
     if str(user_id) in config.ADMIN_ID:
         await message.answer(ru_texts['tariff_name'],
                              reply_markup=admin_kb.cancel_markup)
-        await state.set_state(AddTariffState.tariffs_name)
+        await state.set_state(AddTariffState.tariff_name)
     else:
         await message.answer(ru_texts['admin_no_access'])
 
 
-@tariff_router.message(AddTariffState.tariffs_name)
-async def get_tariffs_name(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+@tariff_router.message(AddTariffState.tariff_name)
+async def get_tariff_name(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     tariff_name = message.text.upper()
 
     if await is_valid_str_only(tariff_name):
         if str(user_id) in config.ADMIN_ID:
-            # Проверяем есть ли в бд такая страна
+            # Проверяем есть ли в бд такой тариф
             tariff_id = await get_tariff_id(tariff_name, session_maker)
             if tariff_id is None:
                 tariff = await get_tariff_data(user_id)
                 tariff.user_id = user_id
                 tariff.tariff_name = tariff_name
 
-                await message.answer(ru_texts['tariff_price'],
+                await message.answer(ru_texts['tariff_name_uzb'],
                                      reply_markup=admin_kb.cancel_markup)
-                await state.set_state(AddTariffState.price)
+                await state.set_state(AddTariffState.tariff_name_uzb)
             else:
                 await message.answer(ru_texts['already_exists'],
                                      reply_markup=admin_kb.markup)
@@ -87,18 +91,54 @@ async def get_tariffs_name(message: types.Message, session_maker: sessionmaker, 
         await message.answer(ru_texts['tariff_name_must_be_string'])
 
 
+@tariff_router.message(AddTariffState.tariff_name_uzb)
+async def get_tariff_name_uzb(message: types.Message, state: FSMContext):
+    user_id = message.chat.id
+    tariff_name_uzb = message.text.upper()
+
+    if await is_valid_str_only(tariff_name_uzb):
+        if str(user_id) in config.ADMIN_ID:
+            tariff = await get_tariff_data(user_id)
+            tariff.user_id = user_id
+            tariff.tariff_name_uzb = tariff_name_uzb
+
+            await message.answer(ru_texts['tariff_price'],
+                                 reply_markup=admin_kb.cancel_markup)
+            await state.set_state(AddTariffState.price)
+        else:
+            await message.answer(ru_texts['admin_no_access'])
+            await state.clear()
+    else:
+        await message.answer(ru_texts['tariff_name_must_be_string'])
+
+
 @tariff_router.message(AddTariffState.price)
-async def get_tariffs_price(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+async def get_tariffs_price(message: types.Message, state: FSMContext):
     user_id = message.chat.id
     if str(user_id) in config.ADMIN_ID:
         if await is_valid_int_or_float(message.text):
             tariff = await get_tariff_data(user_id)
             tariff.price = message.text
-            await message.answer(ru_texts['tariff_description'],
+            await message.answer(ru_texts['description_uzb'],
                                  reply_markup=admin_kb.cancel_markup)
-            await state.set_state(AddTariffState.description)
+            await state.set_state(AddTariffState.description_uzb)
         else:
             await message.answer(ru_texts['enter_correct_cost'])
+    else:
+        await message.answer(ru_texts['admin_no_access'])
+        await state.clear()
+
+
+@tariff_router.message(AddTariffState.description_uzb)
+async def get_tariff_description_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    user_id = message.chat.id
+    if str(user_id) in config.ADMIN_ID:
+        tariff = await get_tariff_data(user_id)
+        tariff.description_uzb = message.text
+        await bot.send_message(chat_id=user_id,
+                               text=ru_texts['tariff_description'],
+                               reply_markup=admin_kb.cancel_markup)
+        await state.set_state(AddTariffState.description)
     else:
         await message.answer(ru_texts['admin_no_access'])
         await state.clear()
@@ -112,20 +152,24 @@ async def get_tariff_description(message: types.Message, session_maker: sessionm
         tariff.description = message.text
         if tariff.tariff_id is not None:
             update_fields = {
-                "tariffs_name": str(tariff.tariff_name),
+                "tariff_name": str(tariff.tariff_name),
+                "tariff_name_uzb": str(tariff.tariff_name_uzb),
                 "price": float(tariff.price),
                 "description": str(tariff.description),
+                "description_uzb": str(tariff.description_uzb),
             }
             await update_tariff(tariff_id=tariff.tariff_id,
-                                 session_maker=session_maker,
-                                 **update_fields)
+                                session_maker=session_maker,
+                                **update_fields)
             # После завершения использования, создаём новый экземпляр для очистки старого
             tariff.reset()
             text_for_message = ru_texts['data_updated']
         else:
             await save_tariff(tariff_name=tariff.tariff_name,
+                              tariff_name_uzb=tariff.tariff_name_uzb,
                               price=float(tariff.price),
                               description=tariff.description,
+                              description_uzb=tariff.description_uzb,
                               session_maker=session_maker)
             tariff.reset()
             text_for_message = ru_texts['saved_thank_you']
@@ -143,8 +187,8 @@ async def cmd_get_all_tariffs(message: types.Message, session_maker: sessionmake
         # Получаем список тарифов
         tariffs = await get_tariffs(session_maker)
         # Вызываем функцию tariffs_kb, чтобы получить список тарифов и клавиатурный markup
-        keyboard_markup = await tariffs_kb(tariffs, user_id)
-        await state.set_state(TariffState.tariffs_name)
+        keyboard_markup = await tariffs_kb(tariffs, user_id, session_maker)
+        await state.set_state(TariffState.tariff_name)
         await bot.send_message(chat_id=user_id,
                                text=ru_texts['choose_tariffs'],
                                reply_markup=keyboard_markup)
@@ -152,7 +196,7 @@ async def cmd_get_all_tariffs(message: types.Message, session_maker: sessionmake
         await message.answer(ru_texts['admin_no_access'])
 
 
-@tariff_router.message(TariffState.tariffs_name)
+@tariff_router.message(TariffState.tariff_name)
 async def process_get_tariff_id(message: types.Message, state: FSMContext, session_maker: sessionmaker):
     user_id = message.chat.id
     # Используем функцию для инициализации user_order
@@ -167,8 +211,11 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
         tariff.reset()
         return
     else:
-        text = await text_for_tariff_info(tariff_name=tariff_info.tariffs_name, price=tariff_info.price,
-                                          description=tariff_info.description)
+        text = await text_for_tariff_info(tariff_name=tariff_info.tariff_name,
+                                          tariff_name_uzb=tariff_info.tariff_name_uzb,
+                                          price=tariff_info.price,
+                                          description=tariff_info.description,
+                                          description_uzb=tariff_info.description_uzb)
 
         await message.answer(text, reply_markup=update_tariff_kb(user_id))
         return
@@ -188,19 +235,23 @@ async def update_or_delete_tariff(callback_query: types.CallbackQuery, session_m
     elif data == 'update_tariff':
         await bot.send_message(user_id, ru_texts['tariff_name'],
                                reply_markup=admin_kb.cancel_markup)
-        await state.set_state(AddTariffState.tariffs_name)
+        await state.set_state(AddTariffState.tariff_name)
     # удаляем сообщение с кнопкой, для избежания повторного нажатия
     await bot.delete_message(chat_id=user_id, message_id=callback_query.message.message_id)
 
 
 @sync_to_async
-def text_for_tariff_info(price, description, tariff_name):
+def text_for_tariff_info(price, description, description_uzb, tariff_name, tariff_name_uzb):
     # собираем в таблицу для админа
     message_text = ''
     message_text += "<pre>"
     message_text += "{:<15} : {:<15}\n".format("Price", price)
     message_text += "{:<15} : {:<15}\n".format("Tariff", tariff_name)
+    message_text += "{:<15} : {:<15}\n".format("Tariff (UZB)",
+                                               tariff_name_uzb if tariff_name_uzb is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description", description)
+    message_text += "{:<15} : {:<15}\n".format("Description (UZB)",
+                                               description_uzb if description_uzb is not None else "N/A")
     message_text += "</pre>"
     return message_text
 
@@ -218,14 +269,16 @@ def is_valid_str_only(text):
 
 
 async def get_tariff_id(tariff_name, session_maker):
-    tariff_id = await Tariffs.get_tariff_from_name(tariffs_name=tariff_name, session_maker=session_maker)
+    tariff_id = await Tariffs.get_tariff_from_name(tariff_name=tariff_name, session_maker=session_maker)
     return tariff_id
 
 
-async def save_tariff(tariff_name, description, price, session_maker):
+async def save_tariff(tariff_name_uzb, tariff_name, description, description_uzb, price, session_maker):
     tariff = await Tariffs.create_tariff(
-        tariffs_name=tariff_name,
+        tariff_name=tariff_name,
+        tariff_name_uzb=tariff_name_uzb,
         description=description,
+        description_uzb=description_uzb,
         price=price,
         session_maker=session_maker)
     return tariff

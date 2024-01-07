@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, select, Text, Boolean, ForeignKey
+from sqlalchemy import (Column, Integer, String, select,
+                        Text, Boolean, ForeignKey)
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
@@ -11,19 +12,24 @@ class Products(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     product_name = Column(String(255), nullable=False)
-    # product_name_uzb = Column(String(255), nullable=True)
+    product_name_uzb = Column(String(255), nullable=True)
     free = Column(Boolean, default=False, nullable=False)
     description = Column(Text(), nullable=True)
-    # description_uzb = Column(Text(), nullable=True)
+    description_uzb = Column(Text(), nullable=True)
     tariff_id = Column(Integer, ForeignKey('tariffs.id'))  # Внешний ключ
+    url = Column(String(500), nullable=True)
     # Определение отношения к таблице "Tariffs"
     tariff = relationship("Tariffs", back_populates="products")
 
-    def __init__(self, product_name, free, tariff_id, description, **kw: Any):
+    def __init__(self, product_name, url, product_name_uzb, free, tariff_id, description, description_uzb,
+                 **kw: Any):
         super().__init__(**kw)
         self.product_name = product_name
+        self.product_name_uzb = product_name_uzb
         self.tariff_id = tariff_id
         self.description = description
+        self.description_uzb = description_uzb
+        self.url = url
         self.free = free
 
     @property
@@ -103,15 +109,20 @@ class Products(Base):
                 return product_name
 
     @staticmethod
-    async def create_product(product_name: str, free: bool, tariff_id: int, description: str,
+    async def create_product(product_name: str, url: str, product_name_uzb: str, description_uzb: str,
+                             free: bool,
+                             tariff_id: int, description: str,
                              session_maker: sessionmaker, ) -> None:
         async with session_maker() as session:
             async with session.begin():
                 product = Products(
                     product_name=product_name,
+                    product_name_uzb=product_name_uzb,
                     tariff_id=tariff_id,
                     description=description,
+                    description_uzb=description_uzb,
                     free=free,
+                    url=url,
                 )
                 try:
                     session.add(product)

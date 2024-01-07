@@ -1,22 +1,17 @@
-from typing import List
-
 from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
-from data.translations import ru_texts, user_language, _
+from data.translations import ru_texts
 from keyboards import admin_kb
-from keyboards.admin_kb import cancel_markup
 from keyboards.inline_button import action_for_select_free_course_or_not
-from keyboards.mailing_for_user_kb import mailing
 from keyboards.products_kb import products_kb, get_products, update_product_kb
 from keyboards.tariffs_kb import tariffs_kb, get_tariffs
 from loader import bot
 from states.course_state import CourseState, AddCourseState
-from states.mailing_state import MailingState
-from utils.db import Users, Products, Tariffs
+from utils.db import Products, Tariffs
 
 course_router = Router(name=__name__)
 
@@ -26,18 +21,24 @@ class CourseData:
     def __init__(self):
         self.user_id = None
         self.product_name = None
+        self.product_name_uzb = None
         self.product_id = None
         self.description = None
+        self.description_uzb = None
         self.tariff_id = None
         self.free = None
+        self.url = None
 
     def reset(self):
         self.user_id = None
         self.product_name = None
+        self.product_name_uzb = None
         self.product_id = None
         self.description = None
+        self.description_uzb = None
         self.tariff_id = None
-        self.is_free = None
+        self.free = None
+        self.url = None
 
 
 courses_data = {}
@@ -67,20 +68,36 @@ async def get_product_name(message: types.Message, session_maker: sessionmaker, 
     user_id = message.chat.id
     product_name = message.text.upper()
     if str(user_id) in config.ADMIN_ID:
-        # Проверяем есть ли в бд такая страна
+        # Проверяем есть ли в бд такой курс
         product_id = await get_product_id(product_name, session_maker)
         if product_id is None:
             product = await get_course_data(user_id)
             product.user_id = user_id
             product.product_name = product_name
-            await message.answer(ru_texts['course_is_free'],
-                                 reply_markup=action_for_select_free_course_or_not(user_id))
-            await state.set_state(AddCourseState.free)
+            await message.answer(ru_texts['product_name_uzb'],
+                                 reply_markup=admin_kb.cancel_markup)
+            await state.set_state(AddCourseState.product_name_uzb)
         else:
             await message.answer(ru_texts['already_exists'],
                                  reply_markup=admin_kb.markup)
             await state.clear()
             return
+    else:
+        await message.answer(ru_texts['admin_no_access'])
+        await state.clear()
+
+
+@course_router.message(AddCourseState.product_name_uzb)
+async def get_product_name_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    user_id = message.chat.id
+    product_name_uzb = message.text.upper()
+    if str(user_id) in config.ADMIN_ID:
+        product = await get_course_data(user_id)
+        product.user_id = user_id
+        product.product_name_uzb = product_name_uzb
+        await message.answer(ru_texts['course_is_free'],
+                             reply_markup=await action_for_select_free_course_or_not(user_id, session_maker))
+        await state.set_state(AddCourseState.free)
     else:
         await message.answer(ru_texts['admin_no_access'])
         await state.clear()
@@ -106,10 +123,40 @@ async def get_product_description(message: types.Message, session_maker: session
     if str(user_id) in config.ADMIN_ID:
         product = await get_course_data(user_id)
         product.description = message.text
+        await bot.send_message(chat_id=user_id,
+                               text=ru_texts['description_uzb'],
+                               reply_markup=admin_kb.cancel_markup)
+        await state.set_state(AddCourseState.description_uzb)
+    else:
+        await message.answer(ru_texts['admin_no_access'])
+        await state.clear()
+
+
+@course_router.message(AddCourseState.description_uzb)
+async def get_product_description_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    user_id = message.chat.id
+    if str(user_id) in config.ADMIN_ID:
+        product = await get_course_data(user_id)
+        product.description_uzb = message.text
+        await bot.send_message(chat_id=user_id,
+                               text=ru_texts['get_url'],
+                               reply_markup=admin_kb.cancel_markup)
+        await state.set_state(AddCourseState.url)
+    else:
+        await message.answer(ru_texts['admin_no_access'])
+        await state.clear()
+
+
+@course_router.message(AddCourseState.url)
+async def get_product_description(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    user_id = message.chat.id
+    if str(user_id) in config.ADMIN_ID:
+        product = await get_course_data(user_id)
+        product.url = message.text
         # Получаем список тарифов
         tariffs = await get_tariffs(session_maker)
         # Вызываем функцию tariffs_kb, чтобы получить список тарифов и клавиатурный markup
-        keyboard_markup = await tariffs_kb(tariffs, user_id)
+        keyboard_markup = await tariffs_kb(tariffs, user_id, session_maker)
         await bot.send_message(chat_id=user_id,
                                text=ru_texts['select_tariff'],
                                reply_markup=keyboard_markup)
@@ -130,8 +177,11 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
     if product.product_id is not None:
         update_fields = {
             "product_name": str(product.product_name),
+            "product_name_uzb": str(product.product_name_uzb),
             "free": product.is_free,
+            "url": product.url,
             "description": str(product.description),
+            "description_uzb": str(product.description_uzb),
             "tariff_id": int(product.tariff_id),
         }
         await update_product(product_id=product.product_id,
@@ -142,9 +192,12 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
         text_for_message = ru_texts['data_updated']
     else:
         await save_product(product_name=str(product.product_name),
+                           product_name_uzb=str(product.product_name_uzb),
                            description=str(product.description),
+                           description_uzb=str(product.description_uzb),
                            tariff_id=int(product.tariff_id),
                            free=product.is_free,
+                           url=product.url,
                            session_maker=session_maker)
         product.reset()
         text_for_message = ru_texts['saved_thank_you']
@@ -159,7 +212,7 @@ async def cmd_all_courses(message: types.Message, session_maker: sessionmaker, s
         # Получаем список курсов
         courses = await get_products(session_maker)
         # Вызываем функцию country_kb, чтобы получить список стран и клавиатурный markup
-        keyboard_markup = await products_kb(courses, user_id)
+        keyboard_markup = await products_kb(courses, user_id, session_maker)
         await state.set_state(CourseState.product_name)
         await bot.send_message(chat_id=user_id,
                                text=ru_texts['choose_courses'],
@@ -190,9 +243,12 @@ async def process_product_name(message: types.Message, state: FSMContext, sessio
         else:
             get_tariff_name = tariff_id
         text = await text_for_product_info(product_name=product_info.product_name,
+                                           product_name_uzb=product_info.product_name_uzb,
                                            free=product_info.free,
+                                           url=product_info.url,
                                            tariff_name=get_tariff_name,
-                                           description=product_info.description)
+                                           description=product_info.description,
+                                           description_uzb=product_info.description_uzb)
         await message.answer(text, reply_markup=update_product_kb(user_id))
         return
 
@@ -217,16 +273,22 @@ async def update_or_delete_product(callback_query: types.CallbackQuery, session_
 
 
 @sync_to_async
-def text_for_product_info(tariff_name, description, free, product_name):
+def text_for_product_info(tariff_name, description, description_uzb, free, url, product_name,
+                          product_name_uzb):
     # собираем в таблицу для админа
     message_text = ''
     message_text += "<pre>"
     message_text += "{:<15} : {:<15}\n".format("Tariff name",
                                                tariff_name if tariff_name is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Course is Free", "бесплатно" if free else "платно")
-    message_text += "{:<15} : {:<15}\n".format("Course name", product_name)
+    message_text += "{:<15} : {:<15}\n".format("Url", url if url is not None else "N/A")
+    message_text += "{:<15} : {:<15}\n".format("Course name ", product_name)
+    message_text += "{:<15} : {:<15}\n".format("Course name(UZB)",
+                                               product_name_uzb if product_name_uzb is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description",
                                                description if description is not None else "N/A")
+    message_text += "{:<15} : {:<15}\n".format("Description(UZB)",
+                                               description_uzb if description_uzb is not None else "N/A")
     message_text += "</pre>"
     return message_text
 
@@ -236,12 +298,16 @@ async def get_product_id(product_name, session_maker):
     return product_id
 
 
-async def save_product(product_name, tariff_id, description, free, session_maker):
+async def save_product(product_name, product_name_uzb, tariff_id, description,
+                       description_uzb, url, free, session_maker):
     product = await Products.create_product(
         product_name=product_name,
+        product_name_uzb=product_name_uzb,
+        description_uzb=description_uzb,
         description=description,
         tariff_id=tariff_id,
         free=free,
+        url=url,
         session_maker=session_maker)
     return product
 

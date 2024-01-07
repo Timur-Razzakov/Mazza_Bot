@@ -1,15 +1,16 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from data.translations import ru_texts, user_language, _
+from handlers.click_cancel_or_back import get_user_language
 
 
-def cancel_markup(user_id):
+async def cancel_markup(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
+    user_lang = await get_user_language(user_id, session_maker)
     # Реализована клавиатура команды отмена
     return ReplyKeyboardMarkup(keyboard=[
         [
-            KeyboardButton(text=_(ru_texts['cancel_with_X'], selected_language))
+            KeyboardButton(text=_(ru_texts['cancel_with_X'], user_lang))
 
         ],
     ],
@@ -29,37 +30,35 @@ def back_markup(user_id):
         resize_keyboard=True, one_time_keyboard=True)
 
 
-def create_default_markup(user_id):
+async def create_default_markup(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
-
+    user_lang = await get_user_language(user_id, session_maker)
     # Реализована дефолтная клавиатура
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=_(ru_texts['about_instar'], selected_language)),
-                KeyboardButton(text=_(ru_texts['suitable_for_me'], selected_language)),
+                KeyboardButton(text=_(ru_texts['about_instar'], user_lang)),
+                KeyboardButton(text=_(ru_texts['suitable_for_me'], user_lang)),
 
             ],
             [
-                KeyboardButton(text=_(ru_texts['free_materials'], selected_language)),
-                KeyboardButton(text=_(ru_texts['course_questions'], selected_language)),
+                KeyboardButton(text=_(ru_texts['free_materials'], user_lang)),
+                KeyboardButton(text=_(ru_texts['course_questions'], user_lang)),
             ],
             [
-                KeyboardButton(text=_(ru_texts['earn_after_training'], selected_language)),
-                KeyboardButton(text=_(ru_texts['help'], selected_language)),
+                KeyboardButton(text=_(ru_texts['earn_after_training'], user_lang)),
+                KeyboardButton(text=_(ru_texts['help'], user_lang)),
             ],
             [
-                KeyboardButton(text=_(ru_texts['tariffs'], selected_language)),
+                KeyboardButton(text=_(ru_texts['tariffs'], user_lang)),
             ]
         ],
         resize_keyboard=True)
 
 
-def only_help_markup(user_id):
+async def only_help_markup(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
-
+    user_lang = await get_user_language(user_id, session_maker)
     # Реализована клавиатура команды Помощь
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -72,14 +71,14 @@ def only_help_markup(user_id):
         resize_keyboard=True, one_time_keyboard=True)
 
 
-async def contact_keyboard(user_id):
+async def contact_keyboard(user_id, session_maker):
     # Определяем язык пользователя
-    selected_language = user_language.get(user_id, "ru")
+    user_lang = await get_user_language(user_id, session_maker)
     return ReplyKeyboardMarkup(
         keyboard=[
             [
-                KeyboardButton(text=_(ru_texts['get_number'], selected_language), request_contact=True, ),
-                # KeyboardButton(text=_(ru_texts['back_for_user'], selected_language))
+                KeyboardButton(text=_(ru_texts['get_number'], user_lang), request_contact=True, ),
+                # KeyboardButton(text=_(ru_texts['back_for_user'], user_lang))
             ]
         ],
         resize_keyboard=True,

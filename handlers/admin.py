@@ -1,28 +1,22 @@
-from typing import List, Optional
-
 from aiogram import types, Router, F
-from aiogram.filters.callback_data import CallbackData
-from aiogram.fsm.context import FSMContext
-from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
-from data.translations import ru_texts, user_language, _, uzb_texts
-from keyboards import default_kb, admin_kb
-from loader import dp, bot
-from utils.db import Users
+from data.translations import ru_texts
+from keyboards import default_kb
 
 admin_router = Router(name=__name__)
 # исп для определения какие действия будут после выбора страны
 current_state = 'admin_data'
 
+
 @admin_router.message(F.text == ru_texts['home'])
-async def cmd_home(message: types.Message):
+async def cmd_home(message: types.Message,session_maker: sessionmaker,):
     user_id = message.chat.id
 
     if str(user_id) in config.ADMIN_ID:
         await message.answer("Вы успешно перешли в главное меню!",
-                             reply_markup=default_kb.create_default_markup(user_id))
+                             reply_markup=await default_kb.create_default_markup(user_id, session_maker))
     else:
         await message.answer(ru_texts['admin_no_access'])
 
