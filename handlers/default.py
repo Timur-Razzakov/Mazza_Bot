@@ -230,10 +230,22 @@ async def cmd_get_free_materials(message: types.Message, session_maker: sessionm
 async def process_direction(message: types.Message, state: FSMContext, session_maker: sessionmaker):
     user_id = message.chat.id
     # Используем функцию для инициализации product
-    product = await get_course_data(user_id)
     product_name = message.text
     product_info = await Products.get_product_from_name(product_name, session_maker)
     file_id = product_info.file_id
+    file_type = product_info.file_type
+    description = product_info.description
+    if file_id and file_type:
+        data = {
+            'chat_id': user_id,
+            'caption': description,
+            file_type: file_id
+        }
+        att = getattr(bot, f'send_{file_type}')
+        await att(**data)
+    else:
+        await bot.send_message(description,
+                               reply_markup=default_kb.create_default_markup(user_id, session_maker))
 
 
 @default_router.message(

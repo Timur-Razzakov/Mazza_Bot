@@ -31,6 +31,7 @@ class CourseData:
         self.tariff_id = None
         self.free = None
         self.file_id = None
+        self.file_type = None
 
     def reset(self):
         self.user_id = None
@@ -42,6 +43,7 @@ class CourseData:
         self.tariff_id = None
         self.free = None
         self.file_id = None
+        self.file_type = None
 
 
 courses_data = {}
@@ -164,12 +166,9 @@ async def get_product_description(message: types.Message,
             file_id = message.video.file_id
         else:  # Для документов
             file_id = message.document.file_id
-        await bot.send_video(
-            chat_id=config.ADMIN_ID[0],
-            caption='234234234',
-            video=file_id
-        )
+
         product.file_id = file_id
+        product.file_type = message.content_type
         await message.reply("Файл сохранен!")
         # Получаем список тарифов
         tariffs = await get_tariffs(session_maker)
@@ -198,6 +197,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
             "product_name_uzb": str(product.product_name_uzb),
             "free": product.is_free,
             "file_id": product.file_id,
+            "file_type": product.file_type,
             "description": str(product.description),
             "description_uzb": str(product.description_uzb),
             "tariff_id": int(product.tariff_id),
@@ -216,6 +216,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
                            tariff_id=int(product.tariff_id),
                            free=product.is_free,
                            file_id=product.file_id,
+                           file_type=product.file_type,
                            session_maker=session_maker)
         product.reset()
         text_for_message = ru_texts['saved_thank_you']
@@ -264,6 +265,7 @@ async def process_product_name(message: types.Message, state: FSMContext, sessio
                                            product_name_uzb=product_info.product_name_uzb,
                                            free=product_info.free,
                                            file_id=product_info.file_id,
+                                           file_type=product_info.file_type,
                                            tariff_name=get_tariff_name,
                                            description=product_info.description,
                                            description_uzb=product_info.description_uzb)
@@ -291,7 +293,7 @@ async def update_or_delete_product(callback_query: types.CallbackQuery, session_
 
 
 @sync_to_async
-def text_for_product_info(tariff_name, description, description_uzb, free, file_id, product_name,
+def text_for_product_info(tariff_name, description, description_uzb, free, file_id, file_type, product_name,
                           product_name_uzb):
     # собираем в таблицу для админа
     message_text = ''
@@ -300,6 +302,7 @@ def text_for_product_info(tariff_name, description, description_uzb, free, file_
                                                tariff_name if tariff_name is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Course is Free", "бесплатно" if free else "платно")
     message_text += "{:<15} : {:<15}\n".format("File_id", file_id if file_id is not None else "N/A")
+    message_text += "{:<15} : {:<15}\n".format("File_type", file_type if file_type is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Course name ", product_name)
     message_text += "{:<15} : {:<15}\n".format("Course name(UZB)",
                                                product_name_uzb if product_name_uzb is not None else "N/A")
@@ -317,7 +320,7 @@ async def get_product_id(product_name, session_maker):
 
 
 async def save_product(product_name, product_name_uzb, tariff_id, description,
-                       description_uzb, file_id, free, session_maker):
+                       description_uzb, file_id,file_type, free, session_maker):
     product = await Products.create_product(
         product_name=product_name,
         product_name_uzb=product_name_uzb,
@@ -326,6 +329,7 @@ async def save_product(product_name, product_name_uzb, tariff_id, description,
         tariff_id=tariff_id,
         free=free,
         file_id=file_id,
+        file_type=file_type,
         session_maker=session_maker)
     return product
 

@@ -119,7 +119,7 @@ class Users(Base):
         :param session: Сессия SQLAlchemy для доступа к базе данных
         :return: Список доступных курсов
         """
-        # Найти пользователя по ID
+        # Найти пользователя по ID (переписать на 2 версию)
         user = session.query(Users).filter(Users.user_id == user_id).first()
 
         # Проверить, задан ли у пользователя тариф

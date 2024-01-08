@@ -18,10 +18,12 @@ class Products(Base):
     description_uzb = Column(Text(), nullable=True)
     tariff_id = Column(Integer, ForeignKey('tariffs.id'))  # Внешний ключ
     file_id = Column(String(500), nullable=True)
+    file_type = Column(String(255), nullable=True)
     # Определение отношения к таблице "Tariffs"
     tariff = relationship("Tariffs", back_populates="products")
 
-    def __init__(self, product_name, file_id, product_name_uzb, free, tariff_id, description, description_uzb,
+    def __init__(self, product_name, file_id, file_type, product_name_uzb, free, tariff_id, description,
+                 description_uzb,
                  **kw: Any):
         super().__init__(**kw)
         self.product_name = product_name
@@ -30,6 +32,7 @@ class Products(Base):
         self.description = description
         self.description_uzb = description_uzb
         self.file_id = file_id
+        self.file_type = file_type
         self.free = free
 
     @property
@@ -74,7 +77,8 @@ class Products(Base):
             async with session.begin():
                 result = await session.execute(
                     select(Products)
-                    .filter(or_(Products.product_name == product_name, Products.product_name_uzb == product_name))
+                    .filter(
+                        or_(Products.product_name == product_name, Products.product_name_uzb == product_name))
                     # type: ignore
                 )
                 return result.scalars().one_or_none()
@@ -110,7 +114,8 @@ class Products(Base):
                 return product_name
 
     @staticmethod
-    async def create_product(product_name: str, file_id: str, product_name_uzb: str, description_uzb: str,
+    async def create_product(product_name: str, file_id: str, file_type: str, product_name_uzb: str,
+                             description_uzb: str,
                              free: bool,
                              tariff_id: int, description: str,
                              session_maker: sessionmaker, ) -> None:
@@ -124,6 +129,7 @@ class Products(Base):
                     description_uzb=description_uzb,
                     free=free,
                     file_id=file_id,
+                    file_type=file_type,
                 )
                 try:
                     session.add(product)
