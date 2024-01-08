@@ -1,10 +1,10 @@
 import os
 
-from decouple import config
+from decouple import config, Csv
 
 BOT_TOKEN = config('BOT_TOKEN')
 # id admin
-ADMIN_ID = config("ADMINS_ID").split(',')
+ADMIN_ID = config("ADMINS_ID", cast=Csv(int))
 IP = config("IP_ADDRESS")
 DB_USER = config("DB_USER")
 DB_PASS = config("DB_PASS")

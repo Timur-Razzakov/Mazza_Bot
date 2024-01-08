@@ -8,8 +8,7 @@ class AddCourseState(StatesGroup):
     description_uzb = State()
     tariff_id = State()
     free = State()
-    url = State()
-    file_type = State()
+    file_id = State()
 
 
 class CourseState(StatesGroup):

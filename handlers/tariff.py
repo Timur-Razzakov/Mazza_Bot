@@ -54,7 +54,7 @@ def get_tariff_data(user_id):
 @tariff_router.message(F.text == ru_texts['add_tariff'])
 async def cmd_add_tariff(message: types.Message, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         await message.answer(ru_texts['tariff_name'],
                              reply_markup=admin_kb.cancel_markup)
         await state.set_state(AddTariffState.tariff_name)
@@ -68,7 +68,7 @@ async def get_tariff_name(message: types.Message, session_maker: sessionmaker, s
     tariff_name = message.text.upper()
 
     if await is_valid_str_only(tariff_name):
-        if str(user_id) in config.ADMIN_ID:
+        if user_id in config.ADMIN_ID:
             # Проверяем есть ли в бд такой тариф
             tariff_id = await get_tariff_id(tariff_name, session_maker)
             if tariff_id is None:
@@ -97,7 +97,7 @@ async def get_tariff_name_uzb(message: types.Message, state: FSMContext):
     tariff_name_uzb = message.text.upper()
 
     if await is_valid_str_only(tariff_name_uzb):
-        if str(user_id) in config.ADMIN_ID:
+        if user_id in config.ADMIN_ID:
             tariff = await get_tariff_data(user_id)
             tariff.user_id = user_id
             tariff.tariff_name_uzb = tariff_name_uzb
@@ -115,7 +115,7 @@ async def get_tariff_name_uzb(message: types.Message, state: FSMContext):
 @tariff_router.message(AddTariffState.price)
 async def get_tariffs_price(message: types.Message, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         if await is_valid_int_or_float(message.text):
             tariff = await get_tariff_data(user_id)
             tariff.price = message.text
@@ -132,7 +132,7 @@ async def get_tariffs_price(message: types.Message, state: FSMContext):
 @tariff_router.message(AddTariffState.description_uzb)
 async def get_tariff_description_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         tariff = await get_tariff_data(user_id)
         tariff.description_uzb = message.text
         await bot.send_message(chat_id=user_id,
@@ -147,7 +147,7 @@ async def get_tariff_description_uzb(message: types.Message, session_maker: sess
 @tariff_router.message(AddTariffState.description)
 async def get_tariff_description(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         tariff = await get_tariff_data(user_id)
         tariff.description = message.text
         if tariff.tariff_id is not None:
@@ -183,7 +183,7 @@ async def get_tariff_description(message: types.Message, session_maker: sessionm
 @tariff_router.message(F.text == ru_texts['all_tariffs'])
 async def cmd_get_all_tariffs(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         # Получаем список тарифов
         tariffs = await get_tariffs(session_maker)
         # Вызываем функцию tariffs_kb, чтобы получить список тарифов и клавиатурный markup

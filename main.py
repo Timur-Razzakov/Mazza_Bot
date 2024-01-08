@@ -16,17 +16,12 @@ from handlers.feedback import feedback_router
 from handlers.mailing import mailing_router
 from handlers.registration import registration_router
 from handlers.tariff import tariff_router
-from loader import dp, bot, telethon_client
+from loader import dp, bot
 from utils.db import create_async_engine, get_session_maker, proceed_schemas, Base
-
-api_id = env_config('API_ID')
-api_hash = env_config('API_HASH')
 
 
 # TODO: Написать тесты
 async def main() -> None:
-    # Telethon клиент
-    await telethon_client.start()
     # создаём боковую панель
     commands_for_bot = []
     for cmd in bot_commands:  # импортируем из handlers/init
