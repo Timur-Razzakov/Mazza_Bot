@@ -13,3 +13,6 @@ class FreeCourseState(StatesGroup):
 
 class AllTariffsState(StatesGroup):
     tariff_name = State()
+    paid_details = State()
+    paid_action = State()
+    paid_check = State()

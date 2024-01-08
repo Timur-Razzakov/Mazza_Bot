@@ -101,5 +101,23 @@
   "product_name_uzb": "Укажите наименование курса на Узбекском",
   "description_uzb": "Укажите описание на Узбекском ",
   "get_url": "Введите ссылку для вашего курса",
-  "tariff_name_uzb": "Укажите наименование  тарифа на Узбекском"
+  "tariff_name_uzb": "Укажите наименование  тарифа на Узбекском",
+
+  "paid_details_title": "Детали платежа",
+  "paid_tariff_name": "\uD83D\uDDD3 <b>Тарифный план:</b> {tariff_name}\n\n<b>Информация:</b>\n<i>\n— Цена: {tariff_price} UZS\n</i>\n<b>После оформления подписки вам станут доступны:</b>\n\n— Канал «Mazza Marketing»",
+  "paid_transfer_details": "\uD83D\uDDD3 <b>Тарифный план:</b> {tariff_name}\n\n<b>\uD83D\uDCB3 Платежные системы</b>\n\nВыберите способ оплаты:",
+  "paid_total": "\uD83D\uDDD3 <b>Тарифный план:</b> {tariff_name}\n<b>✅ Счет на оплату\n\nИнформация:</b>\n<i>\n— Итоговая цена: {tariff_price} UZS\n— Тип платежа: Одноразовый\n</i>\n<b>После успешной оплаты вам станут доступны:</b>\n\n— Канал «Mazza Marketing»\n<b>Сумма для оплаты:</b>\n\n— {tariff_price} UZS\n<b>Реквизиты для оплаты:</b>\n\nПолучатель:\n– Anor Bank\n– Номер карты: 9860 6004 0132 3222\n– Срок действия: 10/26\n– Ф.И.О: Karimov Azamat\n\nℹ\uFE0F После успешной оплаты отправьте <b>фото</b> или <b>файл</b> чека/квитанции в данный чат. На чеке/квитанции должны обязательно присутствовать: <b>дата</b>, <b>время</b> и <b>сумма</b> платежа.",
+  "paid_pay_button": "\uD83D\uDCB3Оплатить",
+  "paid_transfer_button": "Перевод на карту",
+  "paid_back_button": "⬅Назад",
+  "paid_cancel_button": "\uD83D\uDEABОтменить",
+  "paid_success_send": "Ваша заявка успешно отправлено на проверку!",
+  "paid_admin_check": "❗\uFE0F <b>Подтверждение оплаты</b> ❗\uFE0F\n\nКлиент:\n<i>\n— Telegram ID: {user_id}\n— Имя: <a href=\"https://t.me/{user_name}\">{user_name}</a>\n</i>\n<b>Проект:</b>\n<i>\n— Проект: Mazza Marketing\n— Тарифный план: {tariff_name}\n— Платежная система: Перевод на карту\n— Итоговая цена: {tariff_price} UZS\n</i>\n<b>Подтвердите поступление данного платежа:</b>",
+  "paid_admin_confirm_btn": "✅Подтвердить",
+  "paid_admin_reject_btn": "⛔\uFE0FОтклонить",
+  "paid_admin_already_confirm": "⚠\uFE0FЧек уже обработан.",
+  "paid_admin_tariff_update": "♻\uFE0FТариф обновлён.",
+  "paid_admin_confirm": "✅Оплата прошла успешно.",
+  "paid_admin_reject": "❌Оплата отклонена.",
+  "paid_user_send_text": "Ваша заявка обработана: {alert_text}"
 }

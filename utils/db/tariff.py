@@ -160,3 +160,47 @@ class Tariffs(Base):
                 else:
                     # Тариф с указанным идентификатором не найден
                     return "Тариф  не найден"
+
+    @staticmethod
+    async def get_tariff_by_id(tariff_id: int, session_maker: sessionmaker):
+        """
+        Получить тариф по его id
+        :param tariff_id:
+        :param session_maker:
+        :return:
+        """
+        async with session_maker() as session:
+            async with session.begin():
+                tariff = await session.execute(
+                    select(Tariffs)
+                    .filter(Tariffs.id == tariff_id)  # type: ignore
+                )
+                return tariff.scalars().one_or_none()
+
+    @staticmethod
+    async def get_tariff_by_name_and_price(
+            tariff_name: str,
+            price: int,
+            lang: str,
+            session_maker: sessionmaker
+    ):
+        """
+        Получить тариф по цене и имени учитывая язык пользователя
+        :param tariff_name:
+        :param price:
+        :param lang:
+        :param session_maker:
+        :return:
+        """
+        tariff_name_field = 'tariff_name' if lang == 'ru' else 'tariff_name_uzb'
+        condition = {
+            tariff_name_field: tariff_name,
+            'price': price
+        }
+        async with session_maker() as session:
+            tariff = await session.execute(
+                select(Tariffs).filter_by(
+                    **condition
+                )
+            )
+            return tariff.scalars().one_or_none()

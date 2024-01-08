@@ -102,5 +102,23 @@
   "product_name_uzb": "Укажите наименование курса на Узбекском (Перевод)",
   "description_uzb": "Укажите описание на Узбекском (Перевод)",
   "get_url": "Введите ссылку для вашего курса (Перевод)",
-"tariff_name_uzb": "Укажите наименование  тарифа на Узбекском (Перевод)"
+  "tariff_name_uzb": "Укажите наименование  тарифа на Узбекском (Перевод)",
+
+  "paid_details_title": "To'lov ma'lumotlari",
+  "paid_tariff_name": "\uD83D\uDDD3 <b>Obuna tarifi:</b> {tariff_name}\n\n<b>Ma'lumotlar:</b>\n<i>\n— Narxi: {tariff_price} UZS\n</i>\n<b>Obuna olishdan so'ng quyidagi imkoniyatlarga ega bo'lasiz:</b>\n\n— «Mazza Marketing», kanali",
+  "paid_transfer_details": "\uD83D\uDDD3 <b>Obuna tarifi:</b> {tariff_name}\n\n<b>\uD83D\uDCB3 To'lov tizimlari</b>\n\nTo'lov usulini tanlang:",
+  "paid_total": "\uD83D\uDDD3 <b>Obuna tarifi:</b> {tariff_name}\n<b>✅ To'lov hisobi\n\nMa'lumotlar:</b>\n<i>\n— Umumiy narxi: {tariff_price} UZS\n— To'lov turi: Bir martalik\n</i>\n<b>To'lov muvaffaqiyatli amalga oshirilgandan so'ng quyidagi imkoniyatlarga ega bo'lasiz:</b>\n\n— «Mazza Marketing» kanali\n<b>To'lov summasi:</b>\n\n— {tariff_price} UZS\n<b>To'lov uchun ma'lumotlar:</b>\n\nOlingan: \n– Anor Bank\n– Karta raqami: 9860 6004 0132 3222\n– Amal qilish muddati: 10/26\n– F.I.O: Karimov Azamat\n\nℹ\uFE0F To'lov muvaffaqiyatli amalga oshirilgandan so'ng, to'lov qog'ozining yoki kvitansiyaning rasmiy chatga <b>fotoni</b> yoki <b>faylini</b> yuboring. Qog'ozda/kvitansiyada qandaydir sababli quyidagi ma'lumotlar majburiy ravishda bo'lishi kerak: <b>sana</b>, <b>vaqt</b> va to'lov <b>summasi</b>.",
+  "paid_pay_button": "\uD83D\uDCB3To'lash",
+  "paid_transfer_button": "Karta orqali o'tkazma",
+  "paid_back_button": "⬅Orqaga",
+  "paid_cancel_button": "\uD83D\uDEABBekor qilish",
+  "paid_success_send": "Sizning so'rovingiz tekshirish uchun muvaffaqiyatli yuborildi!",
+  "paid_admin_check": "❗\uFE0FTo'lovni tasdiqlash❗\uFE0F\n\nMijoz:\n<i>\n— Telegram ID: {user_id}\n— Ismi: <a href=\"https://t.me/{user_name}\">{user_name}</a>\n</i>\n<b>Loiha:</b>\n<i>\n— Loiha: Mazza Marketing\n— Obuna tarifi: {tariff_name}\n— To'lov tizimi: Karta orqali o'tkazma\n— Umumiy narxi: {tariff_price} UZS\n</i>\n<b>Ushbu to'lov qabul qilinayotganimi tasdiqlang:</b>",
+  "paid_admin_confirm_btn": "✅Tasdiqlash",
+  "paid_admin_reject_btn": "⛔\uFE0FRad etish",
+  "paid_admin_already_confirm": "⚠\uFE0FChek allaqachon ishlab chiqarildi.",
+  "paid_admin_tariff_update": "♻\uFE0FTarif yangilandi.",
+  "paid_admin_confirm": "✅To'lov muvaffaqiyatli amalga oshirildi.",
+  "paid_admin_reject": "❌To'lov rad etildi.",
+  "paid_user_send_text": "Sizning so'rovingiz: {alert_text}"
 }

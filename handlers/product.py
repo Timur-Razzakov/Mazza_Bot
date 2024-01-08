@@ -55,7 +55,7 @@ def get_course_data(user_id):
 @course_router.message(F.text == ru_texts['add_course'])
 async def cmd_add_course(message: types.Message, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         await message.answer(ru_texts['product_name'],
                              reply_markup=admin_kb.cancel_markup)
         await state.set_state(AddCourseState.product_name)
@@ -67,7 +67,7 @@ async def cmd_add_course(message: types.Message, state: FSMContext):
 async def get_product_name(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     product_name = message.text.upper()
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         # Проверяем есть ли в бд такой курс
         product_id = await get_product_id(product_name, session_maker)
         if product_id is None:
@@ -91,7 +91,7 @@ async def get_product_name(message: types.Message, session_maker: sessionmaker, 
 async def get_product_name_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     product_name_uzb = message.text.upper()
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
         product.user_id = user_id
         product.product_name_uzb = product_name_uzb
@@ -120,7 +120,7 @@ async def get_answer(callback_query: types.CallbackQuery, state: FSMContext):
 @course_router.message(AddCourseState.description)
 async def get_product_description(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
         product.description = message.text
         await bot.send_message(chat_id=user_id,
@@ -135,7 +135,7 @@ async def get_product_description(message: types.Message, session_maker: session
 @course_router.message(AddCourseState.description_uzb)
 async def get_product_description_uzb(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
         product.description_uzb = message.text
         await bot.send_message(chat_id=user_id,
@@ -150,7 +150,7 @@ async def get_product_description_uzb(message: types.Message, session_maker: ses
 @course_router.message(AddCourseState.url)
 async def get_product_description(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
         product.url = message.text
         # Получаем список тарифов
@@ -208,7 +208,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
 @course_router.message(F.text == ru_texts['all_courses'])
 async def cmd_all_courses(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         # Получаем список курсов
         courses = await get_products(session_maker)
         # Вызываем функцию country_kb, чтобы получить список стран и клавиатурный markup
