@@ -237,9 +237,10 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
 async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     tariffs = await get_tariffs(session_maker)
+    user_lang = await get_user_language(user_id, session_maker)
     keyboard_markup = await tariffs_user_kb(tariffs, user_id, session_maker)
     await bot.send_message(chat_id=user_id,
-                           text=ru_texts['choose_tariffs'],
+                           text=_(ru_texts['select_tariff'],user_lang),
                            reply_markup=keyboard_markup)
     await state.set_state(AllTariffsState.tariff_name)
 
