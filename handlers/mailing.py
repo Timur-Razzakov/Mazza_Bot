@@ -40,7 +40,7 @@ def get_mailing_data(user_id):
 @mailing_router.message(F.text == ru_texts['newsletter'])
 async def cmd_mailing(message: types.Message, state: FSMContext):
     user_id = message.chat.id
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         await message.answer(ru_texts['select_user_for_mailing'],
                              reply_markup=mailing)
     else:

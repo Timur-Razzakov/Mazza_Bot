@@ -1,21 +1,27 @@
-from aiogram import types, Router
+from aiogram import types, Router, F
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
+from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
-from data.translations import _, ru_texts, user_language, uzb_texts
+from data.translations import _, ru_texts, uzb_texts
 from handlers.click_cancel_or_back import get_user_language
 from keyboards import default_kb, admin_kb, inline_button
 from keyboards.default_kb import create_default_markup, cancel_markup
 from keyboards.language_keyboard import language, language_inline
+from keyboards.payment_confirm_reject_kb import PayConfirmAction, PayConfirmCallback, get_payment_confirm_reject_markup
 from keyboards.products_kb import products_user_kb, free_products
+from keyboards.select_tariffs_kb import action_for_get_paid_2, action_for_get_paid, action_for_get_paid_3, \
+    get_back_kb_button
 from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs
 from loader import bot, dp
 from states.client_data import FreeCourseState, AllTariffsState
 from states.help_state import HelpState
-from utils.db import Users
+from utils.db import Users, Tariffs
 
 default_router = Router(name=__name__)
 
@@ -56,7 +62,7 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
 async def cmd_start(message: types.Message, state: FSMContext, session_maker: sessionmaker, ):
     user_id = message.chat.id
     await state.clear()
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         await message.answer(ru_texts['answer_for_admin'],
                              reply_markup=admin_kb.markup)
         return
@@ -168,7 +174,7 @@ async def cmd_help(message: types.Message, session_maker: sessionmaker, state: F
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['help_request_response'], user_lang),
-                         reply_markup=await cancel_markup(user_id,session_maker))
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.text)
 
 
@@ -181,7 +187,7 @@ async def get_messages_from_client(message: types.Message, session_maker: sessio
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['enter_contact_info'], user_lang),
-                         reply_markup=await cancel_markup(user_id,session_maker))
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.contact)
 
 
@@ -245,24 +251,268 @@ async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, s
 
 
 @default_router.message(AllTariffsState.tariff_name)
-async def cmd_select_tariff(message: types.Message, state: FSMContext, session_maker: sessionmaker):
+async def cmd_select_tariff(
+        message: types.Message,
+        state: FSMContext,
+        session_maker: sessionmaker
+):
     user_id = message.chat.id
-    tariff_name = message.text.split(" | ")[0]
-    if tariff_name == ru_texts['back_for_user']:
-        await message.answer(ru_texts['goodbye'],
-                             reply_markup=await default_kb.create_default_markup(user_id, session_maker))
-        await state.clear()
+    tariff_name, tariff_price_text = message.text.split(" | ")
+    user_lang = await get_user_language(user_id, session_maker)
+    # переводим с такого вида "3123 UZS" в такой int(3123)
+    price = int(tariff_price_text.split()[0])
+
+    tariff: Tariffs = await Tariffs.get_tariff_by_name_and_price(
+        tariff_name=tariff_name,
+        price=price,
+        lang=user_lang, session_maker=session_maker
+    )
+    # Создаём клавиатуру только с кнопкой "назад" чтобы удалить
+    # название тарифов из меню и оставить только кнопку "назад"
+    markup = await get_back_kb_button(user_id, session_maker)
+    # Этот текст нужно отправить, чтобы удалить кнопки с названием тарифов
+    message_details = await message.answer(
+        _(ru_texts['paid_details_title'], user_lang),
+        reply_markup=markup
+    )
+
+    text = _(ru_texts['paid_tariff_name'], user_lang)
+    text = text.format(
+        tariff_name=await get_tariff_name_by_language(user_lang, tariff),
+        tariff_price=tariff.price,
+    )
+    await message.answer(text, reply_markup=await action_for_get_paid(user_id, session_maker))
+
+    # Сохраняем данные с state, чтобы получить к ним доступ из другого state
+    # передаём туда также id побочного текста которой мы использовали для изменения
+    # меню, чтобы иметь возможность его удалить
+    await state.set_data(
+        {
+            'tariff_id': tariff.id,
+            'prev_states': [AllTariffsState.tariff_name],
+            'message_details_id': message_details.message_id
+        }
+    )
+
+    await state.set_state(AllTariffsState.paid_details)
+
+
+@default_router.callback_query(AllTariffsState.paid_details, F.data == 'paid_tariff')
+async def tariff_paid_details(
+        callback_query: types.CallbackQuery,
+        state: FSMContext,
+        session_maker: sessionmaker
+):
+    await callback_query.answer()
+
+    await update_state(state)
+
+    data = await state.get_data()
+    user_id = callback_query.message.chat.id
+    user_lang = await get_user_language(user_id, session_maker)
+    tariff: Tariffs = await Tariffs.get_tariff_by_id(
+        tariff_id=data['tariff_id'], session_maker=session_maker
+    )
+
+    text = _(ru_texts['paid_transfer_details'], user_lang)
+    text = text.format(
+        tariff_name=await get_tariff_name_by_language(user_lang, tariff)
+    )
+
+    await callback_query.message.edit_text(
+        text, reply_markup=await action_for_get_paid_2(user_id, session_maker)
+    )
+
+    await state.set_state(AllTariffsState.paid_action)
+
+
+@default_router.callback_query(AllTariffsState.paid_action, F.data == 'paid_action')
+async def tariff_paid_action(
+        callback_query: types.CallbackQuery,
+        state: FSMContext,
+        session_maker: sessionmaker
+):
+    await callback_query.answer()
+
+    data = await state.get_data()
+    user_id = callback_query.message.chat.id
+    user_lang = await get_user_language(user_id, session_maker)
+    tariff: Tariffs = await Tariffs.get_tariff_by_id(
+        tariff_id=data['tariff_id'], session_maker=session_maker
+    )
+
+    text = _(ru_texts['paid_total'], user_lang)
+    text = text.format(
+        tariff_name=await get_tariff_name_by_language(user_lang, tariff),
+        tariff_price=tariff.price
+    )
+
+    await update_state(state)
+    await callback_query.message.edit_text(
+        text,
+        reply_markup=await action_for_get_paid_3(user_id, session_maker)
+    )
+    await state.set_state(AllTariffsState.paid_check)
+
+
+@default_router.message(AllTariffsState.paid_check, (F.photo | F.document | F.video))
+async def paid_photo_check(
+        message: types.Message,
+        state: FSMContext,
+        session_maker: sessionmaker
+):
+    data = await state.get_data()
+    tariff = await Tariffs.get_tariff_by_id(data['tariff_id'], session_maker)
+    user_lang = await get_user_language(message.chat.id, session_maker)
+
+    text = _(ru_texts['paid_admin_check'], user_lang)
+    text = text.format(
+        user_id=message.from_user.id,
+        user_name=message.from_user.username or message.from_user.first_name,
+        tariff_name=await get_tariff_name_by_language(user_lang, tariff),
+        tariff_price=tariff.price
+    )
+    markup = await get_payment_confirm_reject_markup(
+        user_id=message.from_user.id,
+        tariff_id=tariff.id,
+        session_maker=session_maker
+    )
+    if message.content_type == 'photo':
+        await bot.send_photo(
+            chat_id=config.ADMIN_ID[0],
+            caption=text,
+            photo=message.photo[-1].file_id,
+            reply_markup=markup
+        )
+    if message.content_type == 'document':
+        await bot.send_document(
+            chat_id=config.ADMIN_ID[0],
+            caption=text,
+            document=message.document.file_id,
+            reply_markup=markup
+        )
+    await message.answer(
+        _(ru_texts['paid_success_send'], user_lang),
+        reply_markup=await default_kb.create_default_markup(message.chat.id, session_maker)
+    )
+    await state.clear()
+
+
+@default_router.callback_query(F.data == 'prev_action')
+async def tariff_prev_button(
+        callback_query: types.CallbackQuery,
+        state: FSMContext,
+        session_maker: sessionmaker
+):
+    await callback_query.answer()
+
+    user_id = callback_query.message.chat.id
+    user_lang = await get_user_language(user_id, session_maker)
+    data = await state.get_data()
+    prev_states = data.get('prev_states', [])
+
+    # При нажатии inline кнопки "назад" предыдущий state
+    # и устанавливаем его как текущий.
+    prev_state = prev_states.pop()
+    await state.set_state(prev_state)
+
+    tariff_id = data.get('tariff_id')
+    tariff = await Tariffs.get_tariff_by_id(
+        tariff_id=int(tariff_id), session_maker=session_maker
+    )
+
+    # В зависимости каким был предыдущий state заново формируем для него текст
+    if prev_state == AllTariffsState.tariff_name:
+        tariffs = await get_tariffs(session_maker)
+        keyboard_markup = await tariffs_user_kb(tariffs, user_id, session_maker)
+
+        # Чтобы заново отправить меню с названиями тарифов нам нужно сначало
+        # удалить текст с inline кнопками и потом отправить новое сообщение
+        # с нашим меню. И ещё заодно удаляем побочный текст.
+        await callback_query.message.delete()
+        await bot.delete_message(user_id, message_id=data.pop('message_details_id'))
+        await callback_query.message.answer(
+            _(ru_texts['choose_tariffs'], user_lang),
+            reply_markup=keyboard_markup
+        )
         return
 
-    # # Используем функцию для инициализации user_order
-    # product = await get_course_data(user_id)
-    # product_info = await Products.get_product_from_name(product_name, session_maker)
-    # if product_name == ru_texts['back']:
-    #     await message.answer(ru_texts['goodbye'], reply_markup=admin_kb.markup)
-    #     await state.clear()
-    #     # После завершения использования, создаём новый экземпляр для очистки старого
-    #     product.reset()
-    #     return
+    if prev_state == AllTariffsState.paid_details:
+        text = _(ru_texts['paid_tariff_name'], user_lang)
+        text = text.format(
+            tariff_name=await get_tariff_name_by_language(user_lang, tariff),
+            tariff_price=tariff.price,
+        )
+        await callback_query.message.edit_text(
+            text, reply_markup=await action_for_get_paid(user_id, session_maker)
+        )
+        return
+
+    if prev_state == AllTariffsState.paid_action:
+        text = _(ru_texts['paid_transfer_details'], user_lang)
+        text = text.format(
+            tariff_name=await get_tariff_name_by_language(user_lang, tariff)
+        )
+        await callback_query.message.edit_text(
+            text, reply_markup=await action_for_get_paid_2(user_id, session_maker)
+        )
+
+
+@default_router.callback_query(
+    PayConfirmCallback.filter(
+        (F.action == PayConfirmAction.CONFIRM) |
+        (F.action == PayConfirmAction.REJECT)
+    )
+)
+async def paid_confirm_reject(
+        callback_query: types.CallbackQuery,
+        callback_data: CallbackData,
+        session_maker: sessionmaker
+):
+    user_lang = await get_user_language(callback_query.message.chat.id, session_maker)
+    alert_text = None
+    if callback_data.action == PayConfirmAction.CONFIRM:
+        user: Users = await Users.get_user_by_id(callback_data.user_id, session_maker)
+        if user.tariff_id == callback_data.tariff_id:
+            alert_text = _(ru_texts['paid_admin_already_confirm'], user_lang)
+
+        if user.tariff_id != callback_data.tariff_id:
+            alert_text = _(ru_texts['paid_admin_tariff_update'], user_lang)
+
+        if not user.tariff_id:
+            alert_text = _(ru_texts['paid_admin_tariff_success'], user_lang)
+
+        if user.tariff_id != callback_data.tariff_id:
+            await Users.update_user(
+                user_id=user.user_id,
+                session_maker=session_maker,
+                tariff_id=callback_data.tariff_id
+            )
+
+    if callback_data.action == PayConfirmAction.REJECT:
+        alert_text = _(ru_texts['paid_admin_reject'], user_lang)
+
+    await callback_query.message.edit_caption(
+        caption=f'{callback_query.message.caption} \n {alert_text}'
+    )
+    await callback_query.answer(alert_text, show_alert=True)
+    user_send_text = _(ru_texts['paid_user_send_text'], user_lang)
+    user_send_text = user_send_text.format(alert_text=alert_text)
+    await bot.send_message(callback_data.user_id, user_send_text)
+
+
+async def update_state(state: FSMContext):
+    # Получаем данные из предыдущего state и обновляем их новыми данными.
+    # Prev_states записываем, чтобы inline кнопка назад работало.
+    data = await state.get_data()
+    data['prev_states'].append(await state.get_state())
+    await state.set_data(data)
+
+
+async def get_tariff_name_by_language(user_lang: str, tariff: Tariffs):
+    if user_lang == 'uzb':
+        return tariff.tariff_name_uzb
+    return tariff.tariff_name
 
 
 @sync_to_async

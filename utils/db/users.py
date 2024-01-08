@@ -168,3 +168,11 @@ class Users(Base):
                 else:
                     # Пользователь не найден
                     raise ValueError(f"Пользователь с таким {user_id} не найден!!")
+
+    @staticmethod
+    async def get_user_by_id(user_id: int, session_maker: sessionmaker):
+        async with session_maker() as session:
+            user = await session.execute(
+                select(Users).filter_by(user_id=user_id)
+            )
+            return user.scalars().one_or_none()

@@ -14,7 +14,7 @@ current_state = 'admin_data'
 async def cmd_home(message: types.Message,session_maker: sessionmaker,):
     user_id = message.chat.id
 
-    if str(user_id) in config.ADMIN_ID:
+    if user_id in config.ADMIN_ID:
         await message.answer("Вы успешно перешли в главное меню!",
                              reply_markup=await default_kb.create_default_markup(user_id, session_maker))
     else:
