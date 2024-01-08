@@ -1,12 +1,15 @@
+import aiohttp
 from aiogram import types, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import FSInputFile
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
-
+import requests
 from data import config
 from data.translations import _, ru_texts, user_language, uzb_texts
-from handlers.click_cancel_or_back import get_user_language
+from handlers.click_cancel_or_back import get_user_language, extract_google_drive_id
+from handlers.product import get_course_data
 from keyboards import default_kb, admin_kb, inline_button
 from keyboards.default_kb import create_default_markup, cancel_markup
 from keyboards.language_keyboard import language, language_inline
@@ -15,7 +18,7 @@ from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs
 from loader import bot, dp
 from states.client_data import FreeCourseState, AllTariffsState
 from states.help_state import HelpState
-from utils.db import Users
+from utils.db import Users, Products
 
 default_router = Router(name=__name__)
 
@@ -168,7 +171,7 @@ async def cmd_help(message: types.Message, session_maker: sessionmaker, state: F
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['help_request_response'], user_lang),
-                         reply_markup=await cancel_markup(user_id,session_maker))
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.text)
 
 
@@ -181,7 +184,7 @@ async def get_messages_from_client(message: types.Message, session_maker: sessio
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['enter_contact_info'], user_lang),
-                         reply_markup=await cancel_markup(user_id,session_maker))
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(HelpState.contact)
 
 
@@ -218,19 +221,37 @@ async def cmd_get_free_materials(message: types.Message, session_maker: sessionm
     await state.set_state(FreeCourseState.course_name)
 
 
-# @default_router.message(FreeCourseState.course_name)
-# async def process_direction(message: types.Message, state: FSMContext, session_maker: sessionmaker):
-#     user_id = message.chat.id
-#     # Используем функцию для инициализации user_order
-#     product = await get_course_data(user_id)
-#     product_name = message.text
-#     product_info = await Products.get_product_from_name(product_name, session_maker)
-#     if product_name == ru_texts['back']:
-#         await message.answer(ru_texts['goodbye'], reply_markup=admin_kb.markup)
-#         await state.clear()
-#         # После завершения использования, создаём новый экземпляр для очистки старого
-#         product.reset()
-#         return
+@default_router.message(FreeCourseState.course_name)
+async def process_direction(message: types.Message, state: FSMContext, session_maker: sessionmaker):
+    user_id = message.chat.id
+    # Используем функцию для инициализации product
+    product = await get_course_data(user_id)
+    product_name = message.text
+    product_info = await Products.get_product_from_name(product_name, session_maker)
+    url = product_info.file
+    if url:
+        # Извлечь ID Google Drive и создать URL для скачивания
+        url_for_download = extract_google_drive_id(url)
+
+        # Скачать файл
+        response = requests.get(url_for_download)
+        if response.status_code == 200:
+            doc = FSInputFile(path=url_for_download)
+            await bot.send_document(chat_id=user_id, document=doc)
+            # # Записать скачанный файл в локальный файл
+            # with open('media/downloaded_video.mp4', 'wb') as file:
+            #     for chunk in response.iter_content(32768):
+            #         if chunk:  # filter out keep-alive new chunks
+            #             file.write(chunk)
+            #
+            # # Отправить файл с помощью вашего бота
+            # with open('media/downloaded_video.mp4', 'rb') as file:
+
+                # await bot.send_document(chat_id=user_id, document=file)
+        else:
+            # Обработать случай, когда скачивание не удалось
+            print("Не удалось скачать файл.")
+
 
 @default_router.message(
     lambda message: message.text in [uzb_texts['tariffs'], ru_texts['tariffs']])
@@ -275,3 +296,21 @@ def text_for_tariff_info(price, description, tariff_name):
     message_text += "{:<15} : {:<15}\n".format("Description", description)
     message_text += "</pre>"
     return message_text
+
+
+async def send_large_file_from_google_drive(chat_id: int, file_url: str,):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(file_url) as response:
+            if response.status == 200:
+                # Для больших файлов лучше сохранять файл на диск,
+                # а не держать его в памяти
+                with open('tempfile', 'wb') as file:
+                    while True:
+                        chunk = await response.content.read(1024)  # Читаем по кусочкам
+                        if not chunk:
+                            break
+                        file.write(chunk)
+                with open('tempfile', 'rb') as file:
+                    await bot.send_document(chat_id, document=file)
+            else:
+                await bot.send_message(chat_id, "Не удалось скачать файл.")

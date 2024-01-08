@@ -9,6 +9,7 @@ class AddCourseState(StatesGroup):
     tariff_id = State()
     free = State()
     url = State()
+    file_type = State()
 
 
 class CourseState(StatesGroup):

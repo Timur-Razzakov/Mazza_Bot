@@ -1,10 +1,15 @@
+import os
+from datetime import datetime
+
 from aiogram import types, Router, F
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
+from data.config import BASE_DIR, IMAGES_DIR, VIDEOS_DIR, DOCUMENTS_DIR, MAX_FILE_SIZE
 from data.translations import ru_texts
+from handlers.Telethon import upload_file_telethon
 from keyboards import admin_kb
 from keyboards.inline_button import action_for_select_free_course_or_not
 from keyboards.products_kb import products_kb, get_products, update_product_kb
@@ -27,7 +32,7 @@ class CourseData:
         self.description_uzb = None
         self.tariff_id = None
         self.free = None
-        self.url = None
+        self.file_id = None
 
     def reset(self):
         self.user_id = None
@@ -38,7 +43,7 @@ class CourseData:
         self.description_uzb = None
         self.tariff_id = None
         self.free = None
-        self.url = None
+        self.file_id = None
 
 
 courses_data = {}
@@ -139,20 +144,36 @@ async def get_product_description_uzb(message: types.Message, session_maker: ses
         product = await get_course_data(user_id)
         product.description_uzb = message.text
         await bot.send_message(chat_id=user_id,
-                               text=ru_texts['get_url'],
+                               text=ru_texts['download_file'],
                                reply_markup=admin_kb.cancel_markup)
-        await state.set_state(AddCourseState.url)
+        await state.set_state(AddCourseState.file_id)
     else:
         await message.answer(ru_texts['admin_no_access'])
         await state.clear()
 
 
-@course_router.message(AddCourseState.url)
-async def get_product_description(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+@course_router.message(AddCourseState.file_id, (F.photo | F.document | F.video))
+async def get_product_description(message: types.Message,
+                                  session_maker: sessionmaker,
+                                  state: FSMContext):
     user_id = message.chat.id
+
     if str(user_id) in config.ADMIN_ID:
         product = await get_course_data(user_id)
-        product.url = message.text
+        # Определение пути сохранения и имени файла в зависимости от типа контента
+        if message.content_type == 'photo':
+            file_id = message.photo[-1].file_id
+        elif message.content_type == 'video':
+            file_id = message.video.file_id
+        else:  # Для документов
+            file_id = message.document.file_id
+        await bot.send_video(
+            chat_id=config.ADMIN_ID[0],
+            caption='234234234',
+            video=file_id
+        )
+        product.file_id = file_id
+        await message.reply("Файл сохранен!")
         # Получаем список тарифов
         tariffs = await get_tariffs(session_maker)
         # Вызываем функцию tariffs_kb, чтобы получить список тарифов и клавиатурный markup
@@ -179,7 +200,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
             "product_name": str(product.product_name),
             "product_name_uzb": str(product.product_name_uzb),
             "free": product.is_free,
-            "url": product.url,
+            "file_id": product.file_id,
             "description": str(product.description),
             "description_uzb": str(product.description_uzb),
             "tariff_id": int(product.tariff_id),
@@ -197,7 +218,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
                            description_uzb=str(product.description_uzb),
                            tariff_id=int(product.tariff_id),
                            free=product.is_free,
-                           url=product.url,
+                           file_id=product.file_id,
                            session_maker=session_maker)
         product.reset()
         text_for_message = ru_texts['saved_thank_you']
@@ -245,7 +266,7 @@ async def process_product_name(message: types.Message, state: FSMContext, sessio
         text = await text_for_product_info(product_name=product_info.product_name,
                                            product_name_uzb=product_info.product_name_uzb,
                                            free=product_info.free,
-                                           url=product_info.url,
+                                           file_id=product_info.file_id,
                                            tariff_name=get_tariff_name,
                                            description=product_info.description,
                                            description_uzb=product_info.description_uzb)
@@ -273,7 +294,7 @@ async def update_or_delete_product(callback_query: types.CallbackQuery, session_
 
 
 @sync_to_async
-def text_for_product_info(tariff_name, description, description_uzb, free, url, product_name,
+def text_for_product_info(tariff_name, description, description_uzb, free, file_id, product_name,
                           product_name_uzb):
     # собираем в таблицу для админа
     message_text = ''
@@ -281,7 +302,7 @@ def text_for_product_info(tariff_name, description, description_uzb, free, url, 
     message_text += "{:<15} : {:<15}\n".format("Tariff name",
                                                tariff_name if tariff_name is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Course is Free", "бесплатно" if free else "платно")
-    message_text += "{:<15} : {:<15}\n".format("Url", url if url is not None else "N/A")
+    message_text += "{:<15} : {:<15}\n".format("File_id", file_id if file_id is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Course name ", product_name)
     message_text += "{:<15} : {:<15}\n".format("Course name(UZB)",
                                                product_name_uzb if product_name_uzb is not None else "N/A")
@@ -299,7 +320,7 @@ async def get_product_id(product_name, session_maker):
 
 
 async def save_product(product_name, product_name_uzb, tariff_id, description,
-                       description_uzb, url, free, session_maker):
+                       description_uzb, file_id, free, session_maker):
     product = await Products.create_product(
         product_name=product_name,
         product_name_uzb=product_name_uzb,
@@ -307,7 +328,7 @@ async def save_product(product_name, product_name_uzb, tariff_id, description,
         description=description,
         tariff_id=tariff_id,
         free=free,
-        url=url,
+        file_id=file_id,
         session_maker=session_maker)
     return product
 

@@ -1,11 +1,9 @@
-from aiogram import types, Router, F
-from aiogram.filters import CommandStart
+from aiogram import types, Router
 from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data.translations import _, ru_texts, user_language
-from handlers.default import cmd_start
 from keyboards import inline_button, default_kb
 from keyboards.default_kb import cancel_markup, contact_keyboard
 from loader import bot

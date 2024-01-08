@@ -1,5 +1,5 @@
 from sqlalchemy import (Column, Integer, String, select,
-                        Text, Boolean, ForeignKey)
+                        Text, Boolean, ForeignKey, or_)
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
@@ -17,11 +17,11 @@ class Products(Base):
     description = Column(Text(), nullable=True)
     description_uzb = Column(Text(), nullable=True)
     tariff_id = Column(Integer, ForeignKey('tariffs.id'))  # Внешний ключ
-    url = Column(String(500), nullable=True)
+    file_id = Column(String(500), nullable=True)
     # Определение отношения к таблице "Tariffs"
     tariff = relationship("Tariffs", back_populates="products")
 
-    def __init__(self, product_name, url, product_name_uzb, free, tariff_id, description, description_uzb,
+    def __init__(self, product_name, file_id, product_name_uzb, free, tariff_id, description, description_uzb,
                  **kw: Any):
         super().__init__(**kw)
         self.product_name = product_name
@@ -29,7 +29,7 @@ class Products(Base):
         self.tariff_id = tariff_id
         self.description = description
         self.description_uzb = description_uzb
-        self.url = url
+        self.file_id = file_id
         self.free = free
 
     @property
@@ -74,7 +74,8 @@ class Products(Base):
             async with session.begin():
                 result = await session.execute(
                     select(Products)
-                    .filter(Products.product_name == product_name)  # type: ignore
+                    .filter(or_(Products.product_name == product_name, Products.product_name_uzb == product_name))
+                    # type: ignore
                 )
                 return result.scalars().one_or_none()
 
@@ -109,7 +110,7 @@ class Products(Base):
                 return product_name
 
     @staticmethod
-    async def create_product(product_name: str, url: str, product_name_uzb: str, description_uzb: str,
+    async def create_product(product_name: str, file_id: str, product_name_uzb: str, description_uzb: str,
                              free: bool,
                              tariff_id: int, description: str,
                              session_maker: sessionmaker, ) -> None:
@@ -122,7 +123,7 @@ class Products(Base):
                     description=description,
                     description_uzb=description_uzb,
                     free=free,
-                    url=url,
+                    file_id=file_id,
                 )
                 try:
                     session.add(product)

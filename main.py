@@ -1,9 +1,10 @@
 import asyncio
 import logging
 import sys
-
+from decouple import config as env_config
 from aiogram.types import BotCommand
 from sqlalchemy import URL
+from telethon import TelegramClient
 
 from data import config
 from handlers import bot_commands
@@ -15,12 +16,17 @@ from handlers.feedback import feedback_router
 from handlers.mailing import mailing_router
 from handlers.registration import registration_router
 from handlers.tariff import tariff_router
-from loader import dp, bot
+from loader import dp, bot, telethon_client
 from utils.db import create_async_engine, get_session_maker, proceed_schemas, Base
+
+api_id = env_config('API_ID')
+api_hash = env_config('API_HASH')
 
 
 # TODO: Написать тесты
 async def main() -> None:
+    # Telethon клиент
+    await telethon_client.start()
     # создаём боковую панель
     commands_for_bot = []
     for cmd in bot_commands:  # импортируем из handlers/init
@@ -35,7 +41,6 @@ async def main() -> None:
     dp.include_router(mailing_router)
     dp.include_router(tariff_router)
     dp.include_router(course_router)
-
 
     # подключаемся к бд
     postgresql_url = URL.create(
