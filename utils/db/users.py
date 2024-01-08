@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
 
+from .tariff import Tariffs
 from .base import Base
 from .product import Products
 
@@ -111,24 +112,32 @@ class Users(Base):
                 return result.scalars().one_or_none()
 
     @staticmethod
-    def get_available_courses_for_user(user_id, session):
+    async def get_available_courses_for_user(user_id: int, session_maker: sessionmaker):
         """
         Возвращает список доступных курсов для пользователя на основе его тарифа.
 
         :param user_id: ID пользователя
-        :param session: Сессия SQLAlchemy для доступа к базе данных
+        :param session_maker: Фабрика сессий SQLAlchemy
         :return: Список доступных курсов
         """
-        # Найти пользователя по ID (переписать на 2 версию)
-        user = session.query(Users).filter(Users.user_id == user_id).first()
+        async with session_maker() as session:
+            # Асинхронно получаем пользователя по ID
+            result = await session.execute(select(Users).where(Users.user_id == user_id))
+            user = result.scalars().one_or_none()
 
-        # Проверить, задан ли у пользователя тариф
-        if user and user.tariffs:
-            # Получить продукты, связанные с тарифом пользователя
-            available_products = session.query(Products).filter(Products.tariff_id == user.tariffs.id).all()
-            return available_products
+            # Проверяем, задан ли у пользователя тариф
+            if user:
+                # Получаем тариф пользователя отдельным запросом
+                tariff_result = await session.execute(select(Tariffs).where(Tariffs.id == user.tariff_id))
+                tariff = tariff_result.scalars().one_or_none()
 
-        return []
+                if tariff:
+                    # Получаем продукты, связанные с тарифом пользователя
+                    products_result = await session.execute(
+                        select(Products).where(Products.tariff_id == tariff.id))
+                    return products_result.scalars().all()
+
+            return []  # Возвращаем пустой список, если у пользователя нет тарифа
 
     @staticmethod
     async def get_users_by_language(language: str, session_maker: sessionmaker, ):

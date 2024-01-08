@@ -25,13 +25,24 @@ async def products_kb(products, user_id, session_maker):
     return markup
 
 
-async def free_products(session_maker):
-    products = await Products.get_all_free_products(session_maker=session_maker)
-    return products
-
-
-async def products_user_kb(products, user_id, session_maker):
+async def show_products_to_user(user_id, session_maker):
     user_lang = await get_user_language(user_id, session_maker)
+    products = []  # Список для хранения всех продуктов
+
+    # Получаем бесплатные продукты
+    free_products = await Products.get_all_free_products(session_maker)
+    products.extend(free_products)
+
+    available_products = await Users.get_available_courses_for_user(user_id, session_maker)
+    print(3453453454, available_products)
+    products.extend(available_products)
+
+    # Создаем клавиатуру с продуктами
+    keyboard = await products_user_kb(products, user_lang)
+    return keyboard
+
+
+async def products_user_kb(products, user_lang):
     builder = ReplyKeyboardBuilder()  #
     if user_lang == 'uzb':
         [builder.button(text=product.product_name_uzb) for product in products]

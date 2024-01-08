@@ -44,7 +44,7 @@ async def create_default_markup(user_id, session_maker):
 
             ],
             [
-                KeyboardButton(text=_(ru_texts['free_materials'], user_lang)),
+                KeyboardButton(text=_(ru_texts['available_materials'], user_lang)),
                 KeyboardButton(text=_(ru_texts['course_questions'], user_lang)),
             ],
             [
@@ -53,6 +53,7 @@ async def create_default_markup(user_id, session_maker):
             ],
             [
                 KeyboardButton(text=_(ru_texts['tariffs'], user_lang)),
+                KeyboardButton(text=_(ru_texts['language'], user_lang)),
             ]
         ],
         resize_keyboard=True)

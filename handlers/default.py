@@ -16,7 +16,7 @@ from keyboards.default_kb import create_default_markup, cancel_markup
 from keyboards.language_keyboard import language, language_inline
 from keyboards.payment_confirm_reject_kb import get_payment_confirm_reject_markup, PayConfirmCallback, \
     PayConfirmAction
-from keyboards.products_kb import products_user_kb, free_products
+from keyboards.products_kb import show_products_to_user
 from keyboards.select_tariffs_kb import get_back_kb_button, action_for_get_paid, action_for_get_paid_2, \
     action_for_get_paid_3
 from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs
@@ -52,7 +52,7 @@ def get_help_text(user_id):
     return help_data[user_id]
 
 
-@dp.message(Command('language'))
+@default_router.message( lambda message: message.text in [uzb_texts['language'], ru_texts['language']])
 async def cmd_start(message: types.Message, state: FSMContext, session_maker: sessionmaker, ):
     user_id = message.chat.id
     await state.clear()
@@ -76,27 +76,11 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
                              reply=False)
         await message.answer(
             text="👋😃",  # Текст сообщения должен быть непустым, можно использовать пробел
-            reply_markup=types.ReplyKeyboardRemove()
+            reply_markup=await default_kb.create_default_markup(user_id, session_maker)
         )
     else:
         # Запрос выбора языка
         await message.answer("Tilni tanlang:\n\nВыберите язык:", reply_markup=language)
-
-
-#
-# @dp.message(F.text == '/menu')
-# async def cmd_menu(message: types.Message, state: FSMContext):
-#     """Выводим главное меню с основными кнопками"""
-#     user_id = message.chat.id
-#     await state.clear()
-#     if str(user_id) in config.ADMIN_ID:
-#         pass
-#         # await message.answer(ru_texts['answer_for_admin'],
-#         #                      reply_markup=admin_kb.markup)
-#     else:
-#         # Запрос выбора языка
-#         await message.answer("👋",
-#                              reply_markup=default_kb.create_default_markup(user_id))
 
 
 # Функция для отправки видео и сообщения
@@ -215,13 +199,13 @@ async def get_contact_from_client(message: types.Message, session_maker: session
 
 
 @default_router.message(
-    lambda message: message.text in [uzb_texts['free_materials'], ru_texts['free_materials']])
+    lambda message: message.text in [uzb_texts['available_materials'], ru_texts['available_materials']])
 async def cmd_get_free_materials(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    courses = await free_products(session_maker)
-    keyboard_markup = await products_user_kb(courses, user_id, session_maker)
+    keyboard_markup = await show_products_to_user(user_id, session_maker)
+    user_lang = await get_user_language(user_id, session_maker)
     await bot.send_message(chat_id=user_id,
-                           text=ru_texts['choose_courses'],
+                           text=_(ru_texts['bought_course'], user_lang),
                            reply_markup=keyboard_markup)
     await state.set_state(FreeCourseState.course_name)
 
@@ -244,8 +228,8 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
         att = getattr(bot, f'send_{file_type}')
         await att(**data)
     else:
-        await bot.send_message(description,
-                               reply_markup=default_kb.create_default_markup(user_id, session_maker))
+        await bot.send_message(chat_id=user_id, text=description,
+                               reply_markup=await default_kb.create_default_markup(user_id, session_maker))
 
 
 @default_router.message(
