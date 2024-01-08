@@ -10,7 +10,7 @@ async def cancel_markup(user_id, session_maker):
     # Реализована клавиатура команды отмена
     return ReplyKeyboardMarkup(keyboard=[
         [
-            KeyboardButton(text=_(ru_texts['cancel_with_X'], user_lang))
+            KeyboardButton(text=_(ru_texts['cancel_x'], user_lang))
 
         ],
     ],

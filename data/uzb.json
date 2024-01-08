@@ -50,7 +50,7 @@
   "not_watched": "hali yo'q, tezda ko'rishga yuguraman",
   "check_watching_video": "Video yoqdimi?\n\nTo'liq ko'rib bo'ldingiz degan umiddaman!\n\nBemalol video 1,5-2x qilib ko'rishingiz mumkin.\n\nAytgancha, video ohirida aynan siz uchun tayyorlab qo'ygan bonus haqida gapirib berdim \uD83D\uDE42",
   "tariffs": "\uD83D\uDDD3 Tarif rejalari",
-  "cancel_with_X": "Bekor qilish❌",
+  "cancel_x": "Bekor qilish ❌",
   "operation_cancelled": "Operatsiya muvaffaqiyatli bekor qilindi 🙅‍",
   "thank_you_for_data": "Rahmat. Ma'lumotlaringizni oldik, Menejer ko'rib chiqadi! 🤠",
   "help_request_response": "Nima sodir bo’ldi? Iltimos, aytib bering!\n",

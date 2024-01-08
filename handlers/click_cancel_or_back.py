@@ -42,23 +42,18 @@ async def command_back_for_user(message: types.Message, session_maker: sessionma
     await message.answer(text=_(ru_texts['goodbye'], user_lang),
                          reply_markup=await default_kb.create_default_markup(user_id, session_maker))
 
-
 @cancel_router.message(
-    lambda message: message.text in [uzb_texts['cancel_with_X'], ru_texts['cancel_with_X']])
-async def command_cancel(message: types.Message, session_maker: sessionmaker, state: FSMContext):
-    print(234234234,  message.text)
-    """Отмена для пользователя"""
+    lambda message: message.text in [uzb_texts['cancel_x'], ru_texts['cancel_x']])
+async def command_cancel_for_user(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    """Назад для админа"""
     user_id = message.from_user.id
-    print(656565656,user_id)
     current_state = await state.get_state()
     if current_state:
         await state.clear()
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
-    print(32423423,user_lang)
     await message.answer(text=_(ru_texts['operation_cancelled'], user_lang),
-                         reply_markup=await default_kb.create_default_markup(user_id, sessionmaker))
-
+                         reply_markup=await default_kb.create_default_markup(user_id, session_maker))
 
 @cancel_router.message(
     lambda message: message.text in [uzb_texts['cancel_admin'], ru_texts['cancel_admin']])
