@@ -168,7 +168,7 @@ async def cmd_help(message: types.Message, session_maker: sessionmaker, state: F
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['help_request_response'], user_lang),
-                         reply_markup=await cancel_markup(user_id, session_maker))
+                         reply_markup=await cancel_markup(user_id,session_maker))
     await state.set_state(HelpState.text)
 
 
@@ -181,7 +181,7 @@ async def get_messages_from_client(message: types.Message, session_maker: sessio
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['enter_contact_info'], user_lang),
-                         reply_markup=await cancel_markup(user_id, session_maker))
+                         reply_markup=await cancel_markup(user_id,session_maker))
     await state.set_state(HelpState.contact)
 
 

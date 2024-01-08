@@ -1,17 +1,11 @@
-import datetime
-import random
-import re
-import string
 from typing import Optional, List
 
+from sqlalchemy import Column, Integer, String, ForeignKey, select
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import sessionmaker, selectinload, validates, relationship, Session
+from sqlalchemy.orm import sessionmaker, relationship
 
 from .base import Base
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey, DateTime, Boolean, UniqueConstraint, Date, \
-    select, Float, func, TEXT, text
-
 from .product import Products
 
 
@@ -21,7 +15,7 @@ class Users(Base):
 
     user_id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
-    phone = Column(String(25), nullable=False)
+    phone = Column(String(25), nullable=True)
     lang = Column(String(255), nullable=True)
     # Внешний ключ для связи с Tariffs
     tariff_id = Column(Integer, ForeignKey('tariffs.id'), nullable=True)

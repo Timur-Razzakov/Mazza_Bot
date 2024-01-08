@@ -7,6 +7,8 @@ from handlers.click_cancel_or_back import get_user_language
 async def cancel_markup(user_id, session_maker):
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
+    if user_lang is None:
+        user_lang = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
     # Реализована клавиатура команды отмена
     return ReplyKeyboardMarkup(keyboard=[
         [
@@ -71,9 +73,10 @@ async def only_help_markup(user_id, session_maker):
         resize_keyboard=True, one_time_keyboard=True)
 
 
-async def contact_keyboard(user_id, session_maker):
+def contact_keyboard(user_id):
     # Определяем язык пользователя
-    user_lang = await get_user_language(user_id, session_maker)
+    # user_lang = await get_user_language(user_id, session_maker)
+    user_lang = user_language.get(user_id, "ru")
     return ReplyKeyboardMarkup(
         keyboard=[
             [

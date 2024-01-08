@@ -26,10 +26,11 @@ async def main() -> None:
     for cmd in bot_commands:  # импортируем из handlers/init
         commands_for_bot.append(BotCommand(command=cmd[0], description=cmd[1]))
     await bot.set_my_commands(commands=commands_for_bot)
+    dp.include_router(registration_router)
     dp.include_router(cancel_router)
     dp.include_router(default_router)  # команды для старта и тд..
     dp.include_router(feedback_router)
-    dp.include_router(registration_router)
+
     dp.include_router(admin_router)
     dp.include_router(mailing_router)
     dp.include_router(tariff_router)

@@ -36,7 +36,7 @@ def get_user_data(user_id):
 
 
 @registration_router.message(lambda message: message.text in ["🇺🇿 O'zbekcha", "🇷🇺 Русский"])
-async def handle_language_selection(message: types.Message, session_maker: sessionmaker,state: FSMContext):
+async def handle_language_selection(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.from_user.id
     user_data = await get_user_data(user_id)
     user_data.user_id = user_id
@@ -48,7 +48,7 @@ async def handle_language_selection(message: types.Message, session_maker: sessi
     selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
     await message.answer(text=_(ru_texts['info_about_registration'], selected_language))
     await message.answer(text=_(ru_texts['user_name'], selected_language),
-                         reply_markup=await cancel_markup(user_id,session_maker))
+                         reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(ClientDataState.user_name)
 
 
@@ -57,13 +57,29 @@ async def get_user_name_from_client(message: types.Message, session_maker: sessi
     user_id = message.chat.id
     user_data = await get_user_data(user_id)
     user_data.user_name = message.text
+
     selected_language = user_data.lang  # По умолчанию, если язык не задан, используем 'ru'
-    await message.answer(text=_(ru_texts['user_number'], selected_language),
-                         reply_markup=await contact_keyboard(user_id, session_maker))
-    await state.set_state(ClientDataState.user_number)
+    if message.text == _(ru_texts['cancel_x'], selected_language):
+        # если нажали отмена, то сохраняем пользователя в бд без номера ( имя с тг сами взяли)
+        user_name = message.chat.first_name
+        await save_user(user_id=user_data.user_id,
+                        user_name=user_name,
+                        user_lang=selected_language,
+                        session_maker=session_maker,
+                        user_number=None,
+                        )
+        await state.clear()
+        text = _(ru_texts['bot_greeting'], selected_language)
+        reply_markup = await inline_button.action_for_get_info(user_id, session_maker)
+    else:
+        text = _(ru_texts['user_number'], selected_language)
+        reply_markup = contact_keyboard(user_id)
+        await state.set_state(ClientDataState.user_number)
+    await message.answer(text=text,
+                         reply_markup=reply_markup)
 
 
-@registration_router.message(ClientDataState.user_number, F.contact)
+@registration_router.message(ClientDataState.user_number)
 async def get_user_number_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     user_data = await get_user_data(user_id)
@@ -82,7 +98,7 @@ async def get_user_number_from_client(message: types.Message, session_maker: ses
 
                     )
     await message.answer(text=_(ru_texts['bot_greeting'], selected_language),
-                         reply_markup=await inline_button.action_for_get_info(user_id,session_maker))
+                         reply_markup=await inline_button.action_for_get_info(user_id, session_maker))
 
 
 @registration_router.callback_query(lambda query: query.data in ['ru', 'uzb'])
@@ -104,7 +120,7 @@ async def get_language(callback_query: types.CallbackQuery,
     except ValueError:
         await bot.send_message(user_id,
                                text=f"{_(ru_texts['registration'], selected_language)}\n{_(ru_texts['user_name'], selected_language)}",
-                               reply_markup=await cancel_markup(user_id,session_maker))
+                               reply_markup=await cancel_markup(user_id, session_maker))
         await state.set_state(ClientDataState.user_name)
 
 
