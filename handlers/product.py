@@ -281,9 +281,9 @@ def text_for_product_info(tariff_name, description, description_uzb, free, file_
     message_text += "{:<15} : {:<15}\n".format("Course name(UZB)",
                                                product_name_uzb if product_name_uzb is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description",
-                                               description if description is not None else "N/A")
+                                               description[:300] + '...' if description is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description(UZB)",
-                                               description_uzb if description_uzb is not None else "N/A")
+                                               description_uzb[:300] + '...' if description_uzb is not None else "N/A")
     message_text += "</pre>"
     return message_text
 

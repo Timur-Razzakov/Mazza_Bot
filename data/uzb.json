@@ -122,5 +122,8 @@
   "paid_admin_tariff_update": "♻\uFE0FTarif yangilandi.",
   "paid_admin_confirm": "✅To'lov muvaffaqiyatli amalga oshirildi.",
   "paid_admin_reject": "❌To'lov rad etildi.",
-  "paid_user_send_text": "Sizning so'rovingiz: {alert_text}"
+  "paid_user_send_text": "Sizning so'rovingiz: {alert_text}",
+  "pre_order": "oldindan buyurtma",
+  "announcement": "e'lon",
+  "reasons_for_admission": "kirish sabablari"
 }

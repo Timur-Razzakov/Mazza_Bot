@@ -41,3 +41,18 @@ async def action_for_select_free_course_or_not(user_id, session_maker):
             ]
         ], resize_keyboard=True,
     )
+
+
+async def join_group_markup(user_id, session_maker):
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    # Реализована клавиатура команды Помощь
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=_(ru_texts['join_course'], user_lang, ),
+                                     url="https://t.me/+ZQ1pvhiAJnwxOThi",
+                                     callback_data="join_course"),
+            ]
+        ], resize_keyboard=True,
+    )

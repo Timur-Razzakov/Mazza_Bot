@@ -7,13 +7,13 @@ from sqlalchemy.orm import sessionmaker
 from data import config
 from data.translations import _, ru_texts
 from handlers.default import send_help_text_to_admin
-from keyboards import default_kb
+from keyboards import default_kb, inline_button
 from keyboards.buttons_for_select import markup_checked_watching_video
 from keyboards.default_kb import cancel_markup
 from loader import bot
 from states.feedback_state import FeedbackState
 from utils.db import Products, Users
-from utils.db.utils import get_user_language
+from utils.db.utils import get_user_language, delayed_message, send_product_info
 
 feedback_router = Router(name=__name__)
 
@@ -25,29 +25,40 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     product_name = _(ru_texts['get_bonus_lesson'], user_lang).upper()
-    product_info = await Products.get_product_from_name(
-        product_name, session_maker)
-    file_id = product_info.file_id
-    file_type = product_info.file_type
-    description = product_info.description
-    if file_id and file_type:
-        data = {
-            'chat_id': user_id,
-            'caption': description,
-            file_type: file_id
-        }
-        att = getattr(bot, f'send_{file_type}')
-        await att(**data)
-    else:
-        await bot.send_message(chat_id=user_id, text=description,
-                               reply_markup=await default_kb.create_default_markup(user_id, session_maker))
-    # Задержка перед отправкой следующего сообщения (например, 5 минут)
-    await asyncio.sleep(1200)  # 300 секунд = 5 минут 1200
-    # Отправка сообщения после задержки
-    await bot.send_message(user_id,
-                           text=_(ru_texts['check_watching_video'], user_lang),
-                           reply_markup=await markup_checked_watching_video(user_id, session_maker)
-                           )
+    markup = await default_kb.create_default_markup(user_id, session_maker)
+    await send_product_info(product_name, user_id, session_maker, markup, message=None)
+    # Задержка перед отправкой следующего сообщения
+    """
+    если ставлю await, то не срабатывает относительно указанного времени запуска, 
+    без него работает отлично
+    """
+    asyncio.create_task(delayed_message(product_name=None, user_id=user_id,
+                                        delay=30,
+                                        message=_(ru_texts['check_watching_video'], user_lang),
+                                        session_maker=session_maker,
+                                        markup=await markup_checked_watching_video(user_id, session_maker)))
+
+    asyncio.create_task(
+        delayed_message(product_name=ru_texts['pre_order'].upper(),
+                        user_id=user_id,
+                        delay=40,
+                        session_maker=session_maker,
+                        message=None,
+                        markup=await inline_button.join_group_markup(user_id, session_maker), ))
+    asyncio.create_task(
+        delayed_message(product_name=ru_texts['announcement'].upper(),
+                        user_id=user_id,
+                        delay=50,
+                        session_maker=session_maker,
+                        message=None,
+                        markup=await inline_button.join_group_markup(user_id, session_maker), ))
+    asyncio.create_task(
+        delayed_message(product_name=ru_texts['reasons_for_admission'].upper(),
+                        user_id=user_id,
+                        delay=60,
+                        session_maker=session_maker,
+                        message=None,
+                        markup=await inline_button.join_group_markup(user_id, session_maker)))
 
 
 @feedback_router.callback_query(lambda query: query.data in ['conf', 'conf_2'])
