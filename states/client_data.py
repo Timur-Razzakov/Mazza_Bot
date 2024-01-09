@@ -16,3 +16,4 @@ class AllTariffsState(StatesGroup):
     paid_details = State()
     paid_action = State()
     paid_check = State()
+

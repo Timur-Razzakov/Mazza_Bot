@@ -2,8 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from data.translations import ru_texts, user_language, _
-from handlers.click_cancel_or_back import get_user_language
 from utils.db import Products, Users
+from utils.db.utils import get_user_language
 
 
 async def get_products(session_maker):

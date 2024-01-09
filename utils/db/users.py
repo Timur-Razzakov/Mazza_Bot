@@ -47,14 +47,17 @@ class Users(Base):
 
     @staticmethod
     async def get_users_by_tariff_status(session_maker: sessionmaker,
-                                         has_tariff: Optional[bool] = None) -> List:
+                                         has_tariff: Optional[bool] = None,
+                                         language: Optional[str] = None) -> List:
         """
         Возвращает список пользователей на основе статуса наличия у них тарифа.
 
+        :param language:
         :param session_maker: Сессия SQLAlchemy для доступа к базе данных.
         :param has_tariff: Если True, возвращает пользователей с тарифом.
                            Если False, возвращает пользователей без тарифа.
                            Если None, возвращает всех пользователей.
+        :param language: Язык пользователей ('uzb', 'rus' или другой). Если None, язык не учитывается.
         :return: Список пользователей.
         """
         async with session_maker() as session:  # session теперь AsyncSession
@@ -69,7 +72,12 @@ class Users(Base):
                 # Возвращаем всех пользователей
                 query = select(Users)
             result = await session.execute(query)
-            return result.scalars().all()
+            users = result.scalars().all()
+            # Применяем фильтр по языку, если он указан
+            if language is not None:
+                users = [user for user in users if user.lang == language]
+
+            return users
 
     @staticmethod
     async def create_user(user_id: int,

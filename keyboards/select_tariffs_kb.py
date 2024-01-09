@@ -3,7 +3,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from sqlalchemy.orm import sessionmaker
 
 from data.translations import ru_texts, _
-from handlers.click_cancel_or_back import get_user_language
+from utils.db.utils import get_user_language
 
 
 async def action_for_get_paid(user_id: int, session_maker: sessionmaker):

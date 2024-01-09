@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from data import config
 from data.translations import ru_texts, _
-from handlers.click_cancel_or_back import get_user_language
+from utils.db.utils import get_user_language
 
 
 class PayConfirmAction(enum.Enum):

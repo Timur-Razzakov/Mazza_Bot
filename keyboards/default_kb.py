@@ -1,7 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from data.translations import ru_texts, user_language, _
-from handlers.click_cancel_or_back import get_user_language
+from utils.db.utils import get_user_language
 
 
 async def cancel_markup(user_id, session_maker):

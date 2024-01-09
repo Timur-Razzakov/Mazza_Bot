@@ -2,8 +2,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 from data.translations import ru_texts, user_language, _
-from handlers.click_cancel_or_back import get_user_language
 from utils.db import Tariffs, Users
+from utils.db.utils import get_user_language
 
 
 async def get_tariffs(session_maker):
@@ -25,6 +25,7 @@ async def products_kb(products, user_id, session_maker):
     return markup
 
 
+
 # Реализована клавиатура для выбора тарифа
 async def tariffs_kb(tariffs, user_id, session_maker):
     user_lang = await get_user_language(user_id, session_maker)
@@ -38,14 +39,20 @@ async def tariffs_kb(tariffs, user_id, session_maker):
     markup = builder.as_markup(resize_keyboard=True)
     return markup
 
+async def get_tariffs_for_user(session_maker):
+    tariffs = await Tariffs.get_all_tariffs(session_maker=session_maker)
+    return tariffs
+
 
 async def tariffs_user_kb(tariffs, user_id, session_maker):
     user_lang = await get_user_language(user_id, session_maker)
     builder = ReplyKeyboardBuilder()  #
     if user_lang == 'uzb':
-        [builder.button(text=f"{tariff.tariff_name_uzb} | {tariff.price} UZS") for tariff in tariffs]
+        [builder.button(text=f"{tariff.tariff_name_uzb} | {tariff.price} UZS") for tariff in tariffs if
+         tariff.tariff_name_uzb != '-']
     else:
-        [builder.button(text=f"{tariff.tariff_name} | {tariff.price} UZS") for tariff in tariffs]
+        [builder.button(text=f"{tariff.tariff_name} | {tariff.price} UZS") for tariff in tariffs if
+         tariff.tariff_name != '-']
     builder.button(text=_(ru_texts['back_for_user'], user_lang))
     builder.adjust(*[2] * len(tariffs), 1)
     markup = builder.as_markup(resize_keyboard=True)

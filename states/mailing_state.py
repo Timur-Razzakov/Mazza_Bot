@@ -5,3 +5,4 @@ from aiogram.fsm.state import StatesGroup, State
 class MailingState(StatesGroup):
     message_for_client = State()
     lang = State()
+    file_id = State()

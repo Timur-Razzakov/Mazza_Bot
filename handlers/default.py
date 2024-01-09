@@ -8,22 +8,23 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 import requests
 from data import config
+from data.data_classes import help_data, HelpData
 from data.translations import _, ru_texts, user_language, uzb_texts
-from handlers.click_cancel_or_back import get_user_language
 from handlers.product import get_course_data
 from keyboards import default_kb, admin_kb, inline_button
-from keyboards.default_kb import create_default_markup, cancel_markup
+from keyboards.default_kb import create_default_markup, cancel_markup, contact_keyboard
 from keyboards.language_keyboard import language, language_inline
 from keyboards.payment_confirm_reject_kb import get_payment_confirm_reject_markup, PayConfirmCallback, \
     PayConfirmAction
 from keyboards.products_kb import show_products_to_user
 from keyboards.select_tariffs_kb import get_back_kb_button, action_for_get_paid, action_for_get_paid_2, \
     action_for_get_paid_3
-from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs
+from keyboards.tariffs_kb import tariffs_user_kb, get_tariffs, get_tariffs_for_user
 from loader import bot, dp
 from states.client_data import FreeCourseState, AllTariffsState
 from states.help_state import HelpState
 from utils.db import Users, Products, Tariffs
+from utils.db.utils import get_user_language
 
 default_router = Router(name=__name__)
 
@@ -33,15 +34,6 @@ async def send_help_text_to_admin(admin_chat_id, data_to_send):
     await bot.send_message(admin_chat_id, data_to_send)
 
 
-class HelpData:
-    # получаем text и контакт для связи
-    def __init__(self):
-        self.user_id = None
-        self.text = None
-        self.contact = None
-
-
-help_data = {}
 
 
 # Создаем функцию для инициализации get_help_text
@@ -91,26 +83,6 @@ async def send_media_and_message(user_id, media_type=None, media_url=None):
         elif media_type == 'photo':
             await bot.send_photo(chat_id=user_id, photo=media_url)
 
-
-# Словарь для сопоставления действий с текстами и URL видео
-actions = {
-    'get_bonus_lesson': ('preview_text_for_bonus_lesson', 'video', None),
-    'join_course': ('join_course_text', 'photo', None)
-}
-
-
-@default_router.callback_query(lambda query: query.data == 'join_course')
-async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker: sessionmaker, ):
-    user_id = callback_query.message.chat.id
-    # Определяем язык пользователя
-    user_lang = await get_user_language(user_id, session_maker)
-    text_key, media_type, media_url = actions[callback_query.data]
-    await send_media_and_message(user_id, media_type, media_url)
-    await bot.send_message(
-        chat_id=user_id,
-        text=_(ru_texts[text_key], user_lang),
-        reply_markup=await create_default_markup(user_id, session_maker)
-    )
 
 
 COMMANDS = {
@@ -173,7 +145,7 @@ async def get_messages_from_client(message: types.Message, session_maker: sessio
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     await message.answer(text=_(ru_texts['enter_contact_info'], user_lang),
-                         reply_markup=await cancel_markup(user_id, session_maker))
+                         reply_markup=contact_keyboard(user_id))
     await state.set_state(HelpState.contact)
 
 
@@ -182,7 +154,11 @@ async def get_contact_from_client(message: types.Message, session_maker: session
     admin = config.ADMIN_ID[0]
     user_id = message.chat.id
     help_info = await get_help_text(user_id)
-    help_info.contact = message.text
+    if message.text:
+        help_info.contact = message.text
+    else:
+        help_info.contact = message.contact.phone_number
+
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
     message_text = ''
@@ -236,7 +212,7 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
     lambda message: message.text in [uzb_texts['tariffs'], ru_texts['tariffs']])
 async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
-    tariffs = await get_tariffs(session_maker)
+    tariffs = await get_tariffs_for_user(session_maker)
     user_lang = await get_user_language(user_id, session_maker)
     keyboard_markup = await tariffs_user_kb(tariffs, user_id, session_maker)
     await bot.send_message(chat_id=user_id,
@@ -293,6 +269,7 @@ async def cmd_select_tariff(
 
 
 @default_router.callback_query(AllTariffsState.paid_details, F.data == 'paid_tariff')
+
 async def tariff_paid_details(
         callback_query: types.CallbackQuery,
         state: FSMContext,
@@ -358,12 +335,14 @@ async def paid_photo_check(
 ):
     data = await state.get_data()
     tariff = await Tariffs.get_tariff_by_id(data['tariff_id'], session_maker)
+    user: Users = await Users.get_user_by_id(message.chat.id, session_maker)
     user_lang = await get_user_language(message.chat.id, session_maker)
 
     text = _(ru_texts['paid_admin_check'], user_lang)
     text = text.format(
         user_id=message.from_user.id,
         user_name=message.from_user.username or message.from_user.first_name,
+        phone=user.phone,
         tariff_name=await get_tariff_name_by_language(user_lang, tariff),
         tariff_price=tariff.price
     )

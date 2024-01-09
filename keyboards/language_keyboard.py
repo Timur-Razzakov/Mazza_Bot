@@ -20,3 +20,12 @@ language_inline = InlineKeyboardMarkup(
         ],
     ],
     resize_keyboard=True)
+
+mailing_language = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="🇺🇿 O'zbekcha", callback_data="🇺🇿 O'zbekcha"),
+            InlineKeyboardButton(text='🇷🇺 Русский', callback_data="🇷🇺 Русский"),
+        ],
+    ],
+    resize_keyboard=True)

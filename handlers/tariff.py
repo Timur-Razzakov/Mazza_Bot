@@ -6,6 +6,7 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
+from data.data_classes import tariffs_data, TariffData
 from data.translations import ru_texts, user_language, _
 from keyboards import admin_kb
 from keyboards.admin_kb import cancel_markup
@@ -19,28 +20,8 @@ from utils.db import Users, Tariffs
 tariff_router = Router(name=__name__)
 
 
-class TariffData:
-    # сохраняем данные о пользователе
-    def __init__(self):
-        self.user_id = None
-        self.tariff_id = None
-        self.tariff_name = None
-        self.tariff_name_uzb = None
-        self.description = None
-        self.description_uzb = None
-        self.price = None
-
-    def reset(self):
-        self.user_id = None
-        self.tariff_id = None
-        self.tariff_name = None
-        self.tariff_name_uzb = None
-        self.description = None
-        self.description_uzb = None
-        self.price = None
 
 
-tariffs_data = {}
 
 
 # Создаем функцию для инициализации get_course_data
@@ -225,6 +206,7 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
 async def update_or_delete_tariff(callback_query: types.CallbackQuery, session_maker: sessionmaker,
                                   state: FSMContext):
     """Функция для обновления доставки"""
+    await callback_query.answer()
     user_id = callback_query.from_user.id
     data = callback_query.data
     tariff = await get_tariff_data(user_id)

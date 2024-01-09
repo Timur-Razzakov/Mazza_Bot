@@ -5,4 +5,3 @@ from aiogram.fsm.state import StatesGroup, State
 class FeedbackState(StatesGroup):
     """Для сообщения от пользователя админу"""
     feedback = State()
-    contact = State()

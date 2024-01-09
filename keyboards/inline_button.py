@@ -4,7 +4,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from data.translations import ru_texts, user_language, _
-from handlers.click_cancel_or_back import get_user_language
+from utils.db.utils import get_user_language
 
 
 async def action_for_get_info(user_id, session_maker):
@@ -18,7 +18,8 @@ async def action_for_get_info(user_id, session_maker):
                                      callback_data="get_bonus_lesson"),
             ],
             [
-                InlineKeyboardButton(text=_(ru_texts['join_course'], user_lang),
+                InlineKeyboardButton(text=_(ru_texts['join_course'], user_lang, ),
+                                     url="https://t.me/+ZQ1pvhiAJnwxOThi",
                                      callback_data="join_course"),
             ]
         ], resize_keyboard=True,

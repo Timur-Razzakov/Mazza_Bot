@@ -3,6 +3,7 @@ from aiogram.fsm.context import FSMContext
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
+from data.data_classes import registration_data, RegistrationData
 from data.translations import _, ru_texts, user_language
 from keyboards import inline_button, default_kb
 from keyboards.default_kb import cancel_markup, contact_keyboard
@@ -11,18 +12,6 @@ from states import ClientDataState
 from utils.db import Users
 
 registration_router = Router(name=__name__)
-
-
-class RegistrationData:
-    # сохраняем данные о пользователе
-    def __init__(self):
-        self.user_id = None
-        self.user_name = None
-        self.user_phone = None
-        self.lang = None
-
-
-registration_data = {}
 
 
 # Создаем функцию для инициализации get_user_data
@@ -103,6 +92,7 @@ async def get_user_number_from_client(message: types.Message, session_maker: ses
 async def get_language(callback_query: types.CallbackQuery,
                        session_maker: sessionmaker,
                        state: FSMContext):
+    await callback_query.answer()
     user_id = callback_query.message.chat.id
     user_language[user_id] = callback_query.data
     update_fields = {

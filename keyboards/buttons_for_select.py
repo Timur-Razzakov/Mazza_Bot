@@ -4,7 +4,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from data.translations import ru_texts, user_language, _
-from handlers.click_cancel_or_back import get_user_language
+from utils.db.utils import get_user_language
 
 
 async def checked(user_id, session_maker):

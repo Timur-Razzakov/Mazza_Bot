@@ -7,6 +7,7 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
 from data import config
+from data.data_classes import courses_data, CourseData
 from data.translations import ru_texts
 from keyboards import admin_kb
 from keyboards.inline_button import action_for_select_free_course_or_not
@@ -19,34 +20,6 @@ from utils.db import Products, Tariffs
 course_router = Router(name=__name__)
 
 
-class CourseData:
-    # сохраняем данные о курсе
-    def __init__(self):
-        self.user_id = None
-        self.product_name = None
-        self.product_name_uzb = None
-        self.product_id = None
-        self.description = None
-        self.description_uzb = None
-        self.tariff_id = None
-        self.free = None
-        self.file_id = None
-        self.file_type = None
-
-    def reset(self):
-        self.user_id = None
-        self.product_name = None
-        self.product_name_uzb = None
-        self.product_id = None
-        self.description = None
-        self.description_uzb = None
-        self.tariff_id = None
-        self.free = None
-        self.file_id = None
-        self.file_type = None
-
-
-courses_data = {}
 
 
 # Создаем функцию для инициализации get_course_data
@@ -112,6 +85,7 @@ async def get_product_name_uzb(message: types.Message, session_maker: sessionmak
 @course_router.callback_query(lambda query: query.data in ['yes', 'no'])
 async def get_answer(callback_query: types.CallbackQuery, state: FSMContext):
     user_id = callback_query.message.chat.id
+    await callback_query.answer()
     product = await get_course_data(user_id)
     if callback_query.data == 'yes':
         product.is_free = True
@@ -159,7 +133,6 @@ async def get_product_description(message: types.Message,
     user_id = message.chat.id
     if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
-        # Определение пути сохранения и имени файла в зависимости от типа контента
         if message.content_type == 'photo':
             file_id = message.photo[-1].file_id
         elif message.content_type == 'video':
@@ -276,6 +249,7 @@ async def process_product_name(message: types.Message, state: FSMContext, sessio
 @course_router.callback_query(lambda query: query.data in ['update_product', 'delete_product'])
 async def update_or_delete_product(callback_query: types.CallbackQuery, session_maker: sessionmaker,
                                    state: FSMContext):
+    await callback_query.answer()
     """Функция для обновления доставки"""
     user_id = callback_query.from_user.id
     data = callback_query.data
