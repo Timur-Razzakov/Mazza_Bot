@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 from data.translations import ru_texts, user_language, _
 from utils.db.utils import get_user_language
@@ -87,3 +87,17 @@ def contact_keyboard(user_id):
         ],
         resize_keyboard=True,
     )
+
+
+async def about_instar_markup(user_id, session_maker):
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    # Реализована клавиатура команды Помощь
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=ru_texts['tariffs'], callback_data="tariffs"),
+
+            ],
+        ],
+        resize_keyboard=True, one_time_keyboard=True)

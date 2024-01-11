@@ -1,3 +1,5 @@
+import os
+
 import aiohttp
 from aiogram import types, Router, F
 from aiogram.filters import CommandStart, Command
@@ -8,11 +10,12 @@ from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 import requests
 from data import config
+from data.config import BASE_DIR, Image_PATH
 from data.data_classes import help_data, HelpData
 from data.translations import _, ru_texts, user_language, uzb_texts
 from handlers.product import get_course_data
 from keyboards import default_kb, admin_kb, inline_button
-from keyboards.default_kb import create_default_markup, cancel_markup, contact_keyboard
+from keyboards.default_kb import create_default_markup, cancel_markup, contact_keyboard, about_instar_markup
 from keyboards.language_keyboard import language, language_inline
 from keyboards.payment_confirm_reject_kb import get_payment_confirm_reject_markup, PayConfirmCallback, \
     PayConfirmAction
@@ -25,6 +28,7 @@ from states.client_data import FreeCourseState, AllTariffsState
 from states.help_state import HelpState
 from utils.db import Users, Products, Tariffs
 from utils.db.utils import get_user_language
+from aiogram.types import InputFile
 
 default_router = Router(name=__name__)
 
@@ -32,8 +36,6 @@ default_router = Router(name=__name__)
 async def send_help_text_to_admin(admin_chat_id, data_to_send):
     """Отправляем данные админу без подтверждения"""
     await bot.send_message(admin_chat_id, data_to_send)
-
-
 
 
 # Создаем функцию для инициализации get_help_text
@@ -44,7 +46,7 @@ def get_help_text(user_id):
     return help_data[user_id]
 
 
-@default_router.message( lambda message: message.text in [uzb_texts['language'], ru_texts['language']])
+@default_router.message(lambda message: message.text in [uzb_texts['language'], ru_texts['language']])
 async def cmd_start(message: types.Message, state: FSMContext, session_maker: sessionmaker, ):
     user_id = message.chat.id
     await state.clear()
@@ -63,9 +65,10 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
     # Получаем язык пользователя и отправляем соответствующее сообщение
     selected_language = await get_user_language(user_id, session_maker)
     if selected_language:
-        await message.answer(text=_(ru_texts['bot_greeting'], selected_language),
-                             reply_markup=await inline_button.action_for_get_info(user_id, session_maker),
-                             reply=False)
+        await bot.send_photo(user_id,
+                             photo=FSInputFile(Image_PATH),
+                             caption=_(ru_texts['bot_greeting'], selected_language),
+                             reply_markup=await inline_button.action_for_get_info(user_id, session_maker), )
         await message.answer(
             text="👋😃",  # Текст сообщения должен быть непустым, можно использовать пробел
             reply_markup=await default_kb.create_default_markup(user_id, session_maker)
@@ -84,14 +87,13 @@ async def send_media_and_message(user_id, media_type=None, media_url=None):
             await bot.send_photo(chat_id=user_id, photo=media_url)
 
 
-
 COMMANDS = {
     'course_questions': 'course_answer',
     'suitable_for_me': 'suitable_for_me_answer',
-    'about_instar': 'about_instar_answer',
+
     'earn_after_training': 'earn_after_training_answer'
 }
-relevant_keys = ['course_questions', 'suitable_for_me', 'about_instar', 'earn_after_training']
+relevant_keys = ['course_questions', 'suitable_for_me', 'earn_after_training']
 relevant_commands = [uzb_texts[key] for key in relevant_keys] + [ru_texts[key] for key in relevant_keys]
 
 
@@ -117,6 +119,22 @@ async def cmd_answer_for_question(message: types.Message, session_maker: session
             text=_(ru_texts[COMMANDS[response_key]], user_lang),
             reply_markup=await default_kb.create_default_markup(user_id, session_maker)
         )
+
+
+@default_router.message(lambda message: message.text in [uzb_texts['about_instar'], ru_texts['about_instar']])
+async def cmd_about_instar(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    """
+    Отправляем информацию о проекте
+    :param session_maker:
+    :param message:
+    :param state:
+    :return:
+    """
+    user_id = message.chat.id
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    await message.answer(text=_(ru_texts['about_instar_answer'], user_lang),
+                         reply_markup=await about_instar_markup(user_id, session_maker))
 
 
 @default_router.message(lambda message: message.text in [uzb_texts['help'], ru_texts['help']])
@@ -208,17 +226,31 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
                                reply_markup=await default_kb.create_default_markup(user_id, session_maker))
 
 
+async def process_tariffs(chat_id: int, state: FSMContext, session_maker: sessionmaker):
+    tariffs = await get_tariffs_for_user(session_maker)
+    user_lang = await get_user_language(chat_id, session_maker)
+    keyboard_markup = await tariffs_user_kb(tariffs, chat_id, session_maker)
+    await bot.send_message(chat_id=chat_id,
+                           text=_(ru_texts['select_tariff'], user_lang),
+                           reply_markup=keyboard_markup)
+    await state.set_state(AllTariffsState.tariff_name)
+
+
+@default_router.callback_query(lambda query: query.data in ['tariffs'])
+async def cmd_callback_tariffs(callback_query: types.CallbackQuery, state: FSMContext,
+                               session_maker: sessionmaker):
+    """Для выбора тарифа из inline клавиатуры"""
+
+    user_id = callback_query.from_user.id
+    await process_tariffs(user_id, state, session_maker)
+
+
 @default_router.message(
     lambda message: message.text in [uzb_texts['tariffs'], ru_texts['tariffs']])
 async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, state: FSMContext):
+    """Для выбора тарифа из обычной клавиатуры"""
     user_id = message.chat.id
-    tariffs = await get_tariffs_for_user(session_maker)
-    user_lang = await get_user_language(user_id, session_maker)
-    keyboard_markup = await tariffs_user_kb(tariffs, user_id, session_maker)
-    await bot.send_message(chat_id=user_id,
-                           text=_(ru_texts['select_tariff'],user_lang),
-                           reply_markup=keyboard_markup)
-    await state.set_state(AllTariffsState.tariff_name)
+    await process_tariffs(user_id, state, session_maker)
 
 
 @default_router.message(AllTariffsState.tariff_name)
@@ -269,7 +301,6 @@ async def cmd_select_tariff(
 
 
 @default_router.callback_query(AllTariffsState.paid_details, F.data == 'paid_tariff')
-
 async def tariff_paid_details(
         callback_query: types.CallbackQuery,
         state: FSMContext,

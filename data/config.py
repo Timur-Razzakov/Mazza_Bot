@@ -11,3 +11,8 @@ DB_PASS = config("DB_PASS")
 DB_NAME = config("DB_NAME")
 DB_HOST = config("DB_HOST")
 DB_PORT = config("PORT")
+
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+Image_PATH = os.path.join(BASE_DIR, 'media', 'images', 'image_malika.png')
