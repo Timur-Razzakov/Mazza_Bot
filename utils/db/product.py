@@ -16,7 +16,7 @@ class Products(Base):
     free = Column(Boolean, default=False, nullable=False)
     description = Column(Text(), nullable=True)
     description_uzb = Column(Text(), nullable=True)
-    tariff_id = Column(Integer, ForeignKey('tariffs.id'))  # Внешний ключ
+    tariff_id = Column(Integer, ForeignKey('tariffs.id'), nullable=True)  # Внешний ключ
     file_id = Column(String(500), nullable=True)
     file_type = Column(String(255), nullable=True)
     # Определение отношения к таблице "Tariffs"

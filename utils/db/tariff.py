@@ -14,7 +14,7 @@ class Tariffs(Base):
     tariff_name_uzb = Column(String(255), nullable=True)
     description = Column(Text(), nullable=True)
     description_uzb = Column(Text(), nullable=True)
-    price = Column(Integer(), nullable=False)
+    price = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
     # Отношение "один ко многим" с Product
