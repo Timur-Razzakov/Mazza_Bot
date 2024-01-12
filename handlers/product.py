@@ -126,7 +126,7 @@ async def get_product_description_uzb(message: types.Message, session_maker: ses
         await state.clear()
 
 
-@course_router.message(AddCourseState.file_id, (F.photo | F.document | F.video))
+@course_router.message(AddCourseState.file_id, (F.Text | F.photo | F.document | F.video))
 async def get_product_description(message: types.Message,
                                   session_maker: sessionmaker,
                                   state: FSMContext):
@@ -137,8 +137,10 @@ async def get_product_description(message: types.Message,
             file_id = message.photo[-1].file_id
         elif message.content_type == 'video':
             file_id = message.video.file_id
-        else:  # Для документов
+        elif message.content_type == 'document':
             file_id = message.document.file_id
+        else:  # Для документов
+            file_id = None
 
         product.file_id = file_id
         product.file_type = message.content_type
