@@ -126,12 +126,13 @@ async def get_product_description_uzb(message: types.Message, session_maker: ses
         await state.clear()
 
 
-@course_router.message(AddCourseState.file_id, (F.Text | F.photo | F.document | F.video))
+@course_router.message(AddCourseState.file_id, (F.text | F.photo | F.document | F.video))
 async def get_product_description(message: types.Message,
                                   session_maker: sessionmaker,
                                   state: FSMContext):
     user_id = message.chat.id
     if user_id in config.ADMIN_ID:
+
         product = await get_course_data(user_id)
         if message.content_type == 'photo':
             file_id = message.photo[-1].file_id
@@ -141,7 +142,8 @@ async def get_product_description(message: types.Message,
             file_id = message.document.file_id
         else:  # Для документов
             file_id = None
-
+        if message.text:
+            file_id = None
         product.file_id = file_id
         product.file_type = message.content_type
         await message.reply("Файл сохранен!")
