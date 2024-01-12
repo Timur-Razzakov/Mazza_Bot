@@ -97,14 +97,11 @@ async def get_tariff_name_uzb(message: types.Message, state: FSMContext):
 async def get_tariffs_price(message: types.Message, state: FSMContext):
     user_id = message.chat.id
     if user_id in config.ADMIN_ID:
-        if await is_valid_int_or_float(message.text):
-            tariff = await get_tariff_data(user_id)
-            tariff.price = message.text
-            await message.answer(ru_texts['description_uzb'],
-                                 reply_markup=admin_kb.cancel_markup)
-            await state.set_state(AddTariffState.description_uzb)
-        else:
-            await message.answer(ru_texts['enter_correct_cost'])
+        tariff = await get_tariff_data(user_id)
+        tariff.price = message.text
+        await message.answer(ru_texts['description_uzb'],
+                             reply_markup=admin_kb.cancel_markup)
+        await state.set_state(AddTariffState.description_uzb)
     else:
         await message.answer(ru_texts['admin_no_access'])
         await state.clear()
@@ -135,7 +132,7 @@ async def get_tariff_description(message: types.Message, session_maker: sessionm
             update_fields = {
                 "tariff_name": str(tariff.tariff_name),
                 "tariff_name_uzb": str(tariff.tariff_name_uzb),
-                "price": float(tariff.price),
+                "price": tariff.price,
                 "description": str(tariff.description),
                 "description_uzb": str(tariff.description_uzb),
             }
@@ -148,7 +145,7 @@ async def get_tariff_description(message: types.Message, session_maker: sessionm
         else:
             await save_tariff(tariff_name=tariff.tariff_name,
                               tariff_name_uzb=tariff.tariff_name_uzb,
-                              price=float(tariff.price),
+                              price=tariff.price,
                               description=tariff.description,
                               description_uzb=tariff.description_uzb,
                               session_maker=session_maker)
