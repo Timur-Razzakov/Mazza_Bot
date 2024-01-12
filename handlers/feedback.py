@@ -33,7 +33,7 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
     без него работает отлично
     """
     asyncio.create_task(delayed_message(product_name=None, user_id=user_id,
-                                        delay=30,
+                                        delay=1200,
                                         message=_(ru_texts['check_watching_video'], user_lang),
                                         session_maker=session_maker,
                                         markup=await markup_checked_watching_video(user_id, session_maker)))
@@ -41,21 +41,21 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
     asyncio.create_task(
         delayed_message(product_name=ru_texts['pre_order'].upper(),
                         user_id=user_id,
-                        delay=40,
+                        delay=86400,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker), ))
     asyncio.create_task(
         delayed_message(product_name=ru_texts['announcement'].upper(),
                         user_id=user_id,
-                        delay=50,
+                        delay=88000,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker), ))
     asyncio.create_task(
         delayed_message(product_name=ru_texts['reasons_for_admission'].upper(),
                         user_id=user_id,
-                        delay=60,
+                        delay=172800,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker)))
