@@ -283,6 +283,7 @@ async def cmd_select_tariff(
     text = text.format(
         tariff_name=await get_tariff_name_by_language(user_lang, tariff),
         tariff_price=tariff.price,
+        description=tariff.description
     )
     await message.answer(text, reply_markup=await action_for_get_paid(user_id, session_maker))
 
@@ -347,7 +348,9 @@ async def tariff_paid_action(
     text = _(ru_texts['paid_total'], user_lang)
     text = text.format(
         tariff_name=await get_tariff_name_by_language(user_lang, tariff),
-        tariff_price=tariff.price
+        tariff_price=tariff.price,
+        description=tariff.description
+
     )
 
     await update_state(state)
@@ -447,6 +450,7 @@ async def tariff_prev_button(
         text = text.format(
             tariff_name=await get_tariff_name_by_language(user_lang, tariff),
             tariff_price=tariff.price,
+            description=tariff.description
         )
         await callback_query.message.edit_text(
             text, reply_markup=await action_for_get_paid(user_id, session_maker)

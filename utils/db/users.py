@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from sqlalchemy import Column, Integer, String, ForeignKey, select
+from sqlalchemy import Column, Integer, String, ForeignKey, select, BigInteger
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
@@ -14,7 +14,7 @@ from .product import Products
 class Users(Base):
     __tablename__ = 'users'
 
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(BigInteger, primary_key=True, autoincrement=True)
     name = Column(String(255), nullable=False)
     phone = Column(String(25), nullable=True)
     lang = Column(String(255), nullable=True)
