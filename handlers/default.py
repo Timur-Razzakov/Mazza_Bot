@@ -263,7 +263,7 @@ async def cmd_select_tariff(
     tariff_name, tariff_price_text = message.text.split(" | ")
     user_lang = await get_user_language(user_id, session_maker)
     # переводим с такого вида "3123 UZS" в такой int(3123)
-    price = int(tariff_price_text.split()[0])
+    price = tariff_price_text.split()[0]
 
     tariff: Tariffs = await Tariffs.get_tariff_by_name_and_price(
         tariff_name=tariff_name,
