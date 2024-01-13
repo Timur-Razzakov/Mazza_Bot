@@ -506,8 +506,20 @@ async def paid_confirm_reject(
     if callback_data.action == PayConfirmAction.REJECT:
         alert_text = _(ru_texts['paid_admin_reject'], user_lang)
 
+    text = _(ru_texts['paid_admin_check'], user_lang)
+    tariff = await Tariffs.get_tariff_by_id(callback_data.tariff_id, session_maker)
+    user_data = await bot.get_chat(callback_data.user_id)
+    user = await Users.get_user_by_id(user_data.id, session_maker)
+
+    text = text.format(
+        user_id=user_data.id,
+        user_name=user_data.username or user_data.first_name,
+        phone=user.phone,
+        tariff_name=await get_tariff_name_by_language(user_lang, tariff),
+        tariff_price=tariff.price
+    )
     await callback_query.message.edit_caption(
-        caption=f'{callback_query.message.caption} \n {alert_text}'
+        caption=f'{text} \n {alert_text}'
     )
     await callback_query.answer(alert_text, show_alert=True)
     user_send_text = _(ru_texts['paid_user_send_text'], user_lang)
