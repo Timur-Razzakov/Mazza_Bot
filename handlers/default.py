@@ -88,12 +88,11 @@ async def send_media_and_message(user_id, media_type=None, media_url=None):
 COMMANDS = {
     'course_questions': 'course_answer',
     'suitable_for_me': 'suitable_for_me_answer',
-
     'earn_after_training': 'earn_after_training_answer'
 }
 relevant_keys = ['course_questions', 'suitable_for_me', 'earn_after_training']
 relevant_commands = [uzb_texts[key] for key in relevant_keys] + [ru_texts[key] for key in relevant_keys]
-
+print(234234234, relevant_commands)
 
 @default_router.message(
     lambda message: message.text in relevant_commands)
@@ -104,6 +103,7 @@ async def cmd_answer_for_question(message: types.Message, session_maker: session
     :param state:
     :return:
     """
+    print(234324234, message.text )
     user_id = message.chat.id
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
@@ -111,7 +111,6 @@ async def cmd_answer_for_question(message: types.Message, session_maker: session
     response_key = next((key for key, value in uzb_texts.items() if value == message.text), None)
     if not response_key:
         response_key = next((key for key, value in ru_texts.items() if value == message.text), None)
-
     if response_key and response_key in COMMANDS:
         await message.answer(
             text=_(ru_texts[COMMANDS[response_key]], user_lang),
@@ -477,6 +476,7 @@ async def paid_confirm_reject(
         session_maker: sessionmaker
 ):
     user_lang = await get_user_language(callback_data.user_id, session_maker)
+    # admin_lang = await get_user_language(callback_data.user_id, session_maker)
     alert_text = None
     group_link_markup = None
     group_link = await Tariffs.get_group_link(callback_data.tariff_id, session_maker)
