@@ -58,7 +58,8 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
 async def cmd_start(message: types.Message, state: FSMContext, session_maker: sessionmaker, ):
     user_id = message.chat.id
     await state.clear()
-    if user_id in config.ADMIN_ID:
+    user = await Users.get_user_by_id(user_id, session_maker)
+    if user_id in config.ADMIN_ID and user:
         await message.answer(ru_texts['answer_for_admin'],
                              reply_markup=admin_kb.markup)
         return

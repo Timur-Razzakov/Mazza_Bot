@@ -88,7 +88,7 @@ class Users(Base):
                           session_maker: sessionmaker) -> None:
         async with session_maker() as session:
             async with session.begin():
-                order = Users(
+                user = Users(
                     user_id=user_id,
                     name=name,
                     phone=phone,
@@ -96,8 +96,8 @@ class Users(Base):
                     lang=lang,
                 )
                 try:
-                    session.add(order)
-                    session.commit()  # Сохранить изменения
+                    session.add(user)
+                    await session.commit()  # Сохранить изменения
                 except ProgrammingError as e:
                     session.rollback()  # Откатить изменения в случае ошибки
                     # TODO: add log

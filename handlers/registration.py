@@ -44,7 +44,6 @@ async def get_user_name_from_client(message: types.Message, session_maker: sessi
     user_id = message.chat.id
     user_data = await get_user_data(user_id)
     user_data.user_name = message.text
-
     selected_language = user_data.lang  # По умолчанию, если язык не задан, используем 'ru'
     if message.text == _(ru_texts['cancel_x'], selected_language):
         # если нажали отмена, то сохраняем пользователя в бд без номера ( имя с тг сами взяли)
