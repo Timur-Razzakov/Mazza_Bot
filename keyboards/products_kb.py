@@ -34,7 +34,6 @@ async def show_products_to_user(user_id, session_maker):
     products.extend(free_products)
 
     available_products = await Users.get_available_courses_for_user(user_id, session_maker)
-    print(3453453454, available_products)
     products.extend(available_products)
 
     # Создаем клавиатуру с продуктами

@@ -76,8 +76,6 @@ async def get_product_description(message: types.Message,
             file_id = message.document.file_id
         else:
             file_id = None
-        print(234234, message.content_type)
-        print(234234, file_id)
         mailing_data.file_id = file_id
         mailing_data.file_type = message.content_type
         await message.answer(text=(ru_texts['language']),

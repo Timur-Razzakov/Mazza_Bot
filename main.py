@@ -48,7 +48,6 @@ async def main() -> None:
     )
     async_engine = create_async_engine(postgresql_url)
     session_maker = get_session_maker(async_engine)  # для работы с бд создаём сессии
-    print(235442265467, session_maker)
     await proceed_schemas(async_engine, Base.metadata)
     await async_engine.dispose()  # решает проблему с event loop
     await dp.start_polling(bot, session_maker=session_maker, skip_updates=True)
