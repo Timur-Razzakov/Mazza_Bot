@@ -281,7 +281,7 @@ async def cmd_select_tariff(
     text = text.format(
         tariff_name=await get_tariff_name_by_language(user_lang, tariff),
         tariff_price=tariff.price,
-        description=tariff.description
+        description=await get_tariff_description_by_language(user_lang, tariff)
     )
     await message.answer(text, reply_markup=await action_for_get_paid(user_id, session_maker))
 
@@ -347,7 +347,7 @@ async def tariff_paid_action(
     text = text.format(
         tariff_name=await get_tariff_name_by_language(user_lang, tariff),
         tariff_price=tariff.price,
-        description=tariff.description
+        description=await get_tariff_description_by_language(user_lang, tariff)
 
     )
 
@@ -448,7 +448,7 @@ async def tariff_prev_button(
         text = text.format(
             tariff_name=await get_tariff_name_by_language(user_lang, tariff),
             tariff_price=tariff.price,
-            description=tariff.description
+            description=await get_tariff_description_by_language(user_lang, tariff)
         )
         await callback_query.message.edit_text(
             text, reply_markup=await action_for_get_paid(user_id, session_maker)
@@ -527,6 +527,12 @@ async def get_tariff_name_by_language(user_lang: str, tariff: Tariffs):
     if user_lang == 'uzb':
         return tariff.tariff_name_uzb
     return tariff.tariff_name
+
+
+async def get_tariff_description_by_language(user_lang: str, tariff: Tariffs):
+    if user_lang == 'uzb':
+        return tariff.description_uzb
+    return tariff.description
 
 
 @sync_to_async
