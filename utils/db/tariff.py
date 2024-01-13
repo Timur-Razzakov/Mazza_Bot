@@ -135,7 +135,7 @@ class Tariffs(Base):
                 return tariff_name
 
     @staticmethod
-    async def create_tariff(tariff_name: str, group_link: str, tariff_name_uzb: str,
+    async def create_tariff(tariff_name: str, tariff_name_uzb: str,
                             description_uzb: str, price: bool,
                             description: str,
                             session_maker: sessionmaker, ) -> None:
@@ -145,7 +145,6 @@ class Tariffs(Base):
                     tariff_name=tariff_name,
                     tariff_name_uzb=tariff_name_uzb,
                     description=description,
-                    group_link=group_link,
                     description_uzb=description_uzb,
                     price=price,
                 )

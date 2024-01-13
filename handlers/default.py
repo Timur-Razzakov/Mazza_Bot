@@ -476,7 +476,7 @@ async def paid_confirm_reject(
         callback_data: CallbackData,
         session_maker: sessionmaker
 ):
-    user_lang = await get_user_language(callback_query.message.chat.id, session_maker)
+    user_lang = await get_user_language(callback_data.user_id, session_maker)
     alert_text = None
     group_link_markup = None
     group_link = await Tariffs.get_group_link(callback_data.tariff_id, session_maker)
