@@ -22,9 +22,13 @@ feedback_router = Router(name=__name__)
 async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker: sessionmaker, ):
     user_id = callback_query.message.chat.id
     await callback_query.answer()
+    print(234234234234234234)
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
+    print(234234, user_lang)
+
     product_name = _(ru_texts['get_bonus_lesson'], user_lang).upper()
+    print(88888888888888888,product_name)
     markup = await default_kb.create_default_markup(user_id, session_maker)
     await send_product_info(product_name, user_id, session_maker, markup, message=None)
     # Задержка перед отправкой следующего сообщения

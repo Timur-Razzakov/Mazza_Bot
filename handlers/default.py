@@ -212,11 +212,15 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
     file_type = product_info.file_type
     description = product_info.description
     if file_id and file_type:
+
         data = {
             'chat_id': user_id,
             'caption': description,
             file_type: file_id
         }
+        if not description:
+            data.pop('caption', None)
+
         att = getattr(bot, f'send_{file_type}')
         await att(**data)
     else:

@@ -23,7 +23,7 @@ class Tariffs(Base):
     # Связь с User (обратная ссылка)
     user = relationship("Users", back_populates="tariffs", uselist=False)
 
-    def __init__(self, tariff_name,group_link, tariff_name_uzb, price, description, **kw: Any):
+    def __init__(self, tariff_name, group_link, tariff_name_uzb, price, description, **kw: Any):
         super().__init__(**kw)
         self.tariff_name = tariff_name
         self.tariff_name_uzb = tariff_name_uzb
@@ -135,7 +135,7 @@ class Tariffs(Base):
                 return tariff_name
 
     @staticmethod
-    async def create_tariff(tariff_name: str,group_link:str, tariff_name_uzb: str,
+    async def create_tariff(tariff_name: str, group_link: str, tariff_name_uzb: str,
                             description_uzb: str, price: bool,
                             description: str,
                             session_maker: sessionmaker, ) -> None:
@@ -221,3 +221,19 @@ class Tariffs(Base):
                 )
             )
             return tariff.scalars().one_or_none()
+
+    @staticmethod
+    async def get_tariff_from_name(tariff_name: str, session_maker: sessionmaker):
+        """
+        Получить тариф по его имени
+        :param tariff_name:
+        :param session_maker:
+        :return:
+        """
+        async with session_maker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(Tariffs)
+                    .filter(Tariffs.tariff_name == tariff_name)  # type: ignore
+                )
+                return result.scalars().one_or_none()

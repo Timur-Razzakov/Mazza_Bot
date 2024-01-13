@@ -195,8 +195,8 @@ async def process_get_tariff_id(message: types.Message, state: FSMContext, sessi
     else:
         await save_product(product_name=str(product.product_name),
                            product_name_uzb=str(product.product_name_uzb),
-                           description=str(product.description),
-                           description_uzb=str(product.description_uzb),
+                           description=product.description,
+                           description_uzb=product.description_uzb,
                            tariff_id=int(product.tariff_id),
                            free=product.is_free,
                            file_id=product.file_id,
