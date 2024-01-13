@@ -22,6 +22,12 @@ async def send_product_info(product_name, user_id, session_maker, markup, messag
     if product_name is None:
         await bot.send_message(user_id, message, reply_markup=markup)
     product_info = await Products.get_product_from_name(product_name, session_maker)
+    if product_info is None:
+        await bot.send_message(
+            chat_id=user_id,
+            text="Бесплатный урок временно отсутствует!!",
+        )
+        return
     file_id = product_info.file_id
     file_type = product_info.file_type
     description = product_info.description

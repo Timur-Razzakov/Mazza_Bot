@@ -261,14 +261,10 @@ async def cmd_select_tariff(
         session_maker: sessionmaker
 ):
     user_id = message.chat.id
-    tariff_name, tariff_price_text = message.text.split(" | ")
     user_lang = await get_user_language(user_id, session_maker)
-    # переводим с такого вида "3123 UZS" в такой int(3123)
-    price = tariff_price_text.split()[0]
 
     tariff: Tariffs = await Tariffs.get_tariff_by_name_and_price(
-        tariff_name=tariff_name,
-        price=price,
+        tariff_name=message.text,
         lang=user_lang, session_maker=session_maker
     )
     # Создаём клавиатуру только с кнопкой "назад" чтобы удалить

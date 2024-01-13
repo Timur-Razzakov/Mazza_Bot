@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from data import config
 from data.data_classes import courses_data, CourseData
 from data.translations import ru_texts
-from keyboards import admin_kb
+from keyboards import admin_kb, agree_or_not_kb
 from keyboards.inline_button import action_for_select_free_course_or_not
 from keyboards.products_kb import products_kb, get_products, update_product_kb
 from keyboards.tariffs_kb import tariffs_kb, get_tariffs
@@ -18,8 +18,6 @@ from states.course_state import CourseState, AddCourseState
 from utils.db import Products, Tariffs
 
 course_router = Router(name=__name__)
-
-
 
 
 # Создаем функцию для инициализации get_course_data
@@ -83,7 +81,7 @@ async def get_product_name_uzb(message: types.Message, session_maker: sessionmak
 
 @course_router.message(AddCourseState.free)
 @course_router.callback_query(lambda query: query.data in ['yes', 'no'])
-async def get_answer(callback_query: types.CallbackQuery, state: FSMContext):
+async def get_answer(callback_query: types.CallbackQuery, session_maker: sessionmaker, state: FSMContext):
     user_id = callback_query.message.chat.id
     await callback_query.answer()
     product = await get_course_data(user_id)
@@ -92,7 +90,8 @@ async def get_answer(callback_query: types.CallbackQuery, state: FSMContext):
     elif callback_query.data == 'no':
         product.is_free = False
     await bot.send_message(user_id, ru_texts['product_description'],
-                           reply_markup=admin_kb.cancel_markup)
+                           reply_markup=await agree_or_not_kb.markup_send_descriptions(user_id,
+                                                                                       session_maker))
     await state.set_state(AddCourseState.description)
 
 
@@ -101,10 +100,14 @@ async def get_product_description(message: types.Message, session_maker: session
     user_id = message.chat.id
     if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
-        product.description = message.text
+        if message.text == ru_texts['cancel_with_smile']:
+            product.description = None
+        else:
+            product.description = message.text
         await bot.send_message(chat_id=user_id,
                                text=ru_texts['description_uzb'],
-                               reply_markup=admin_kb.cancel_markup)
+                               reply_markup=await agree_or_not_kb.markup_send_descriptions(user_id,
+                                                                                           session_maker))
         await state.set_state(AddCourseState.description_uzb)
     else:
         await message.answer(ru_texts['admin_no_access'])
@@ -116,10 +119,14 @@ async def get_product_description_uzb(message: types.Message, session_maker: ses
     user_id = message.chat.id
     if user_id in config.ADMIN_ID:
         product = await get_course_data(user_id)
-        product.description_uzb = message.text
+        if message.text == ru_texts['cancel_with_smile']:
+            product.description_uzb = None
+        else:
+            product.description_uzb = message.text
         await bot.send_message(chat_id=user_id,
                                text=ru_texts['download_file'],
-                               reply_markup=admin_kb.cancel_markup)
+                               reply_markup=await agree_or_not_kb.markup_send_descriptions(user_id,
+                                                                                           session_maker))
         await state.set_state(AddCourseState.file_id)
     else:
         await message.answer(ru_texts['admin_no_access'])
@@ -142,7 +149,7 @@ async def get_product_description(message: types.Message,
             file_id = message.document.file_id
         else:  # Для документов
             file_id = None
-        if message.text:
+        if message.text == ru_texts['cancel_with_smile']:
             file_id = None
         product.file_id = file_id
         product.file_type = message.content_type
@@ -285,9 +292,11 @@ def text_for_product_info(tariff_name, description, description_uzb, free, file_
     message_text += "{:<15} : {:<15}\n".format("Course name(UZB)",
                                                product_name_uzb if product_name_uzb is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description",
-                                               description[:300] + '...' if description is not None else "N/A")
+                                               description[
+                                               :300] + '...' if description is not None else "N/A")
     message_text += "{:<15} : {:<15}\n".format("Description(UZB)",
-                                               description_uzb[:300] + '...' if description_uzb is not None else "N/A")
+                                               description_uzb[
+                                               :300] + '...' if description_uzb is not None else "N/A")
     message_text += "</pre>"
     return message_text
 
@@ -298,7 +307,7 @@ async def get_product_id(product_name, session_maker):
 
 
 async def save_product(product_name, product_name_uzb, tariff_id, description,
-                       description_uzb, file_id,file_type, free, session_maker):
+                       description_uzb, file_id, file_type, free, session_maker):
     product = await Products.create_product(
         product_name=product_name,
         product_name_uzb=product_name_uzb,

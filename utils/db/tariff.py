@@ -180,7 +180,6 @@ class Tariffs(Base):
     @staticmethod
     async def get_tariff_by_name_and_price(
             tariff_name: str,
-            price: int,
             lang: str,
             session_maker: sessionmaker
     ):
@@ -195,7 +194,6 @@ class Tariffs(Base):
         tariff_name_field = 'tariff_name' if lang == 'ru' else 'tariff_name_uzb'
         condition = {
             tariff_name_field: tariff_name,
-            'price': price
         }
         async with session_maker() as session:
             tariff = await session.execute(

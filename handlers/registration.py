@@ -1,8 +1,10 @@
 from aiogram import types, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.types import FSInputFile
 from asgiref.sync import sync_to_async
 from sqlalchemy.orm import sessionmaker
 
+from data.config import Image_PATH
 from data.data_classes import registration_data, RegistrationData
 from data.translations import _, ru_texts, user_language
 from keyboards import inline_button, default_kb
@@ -55,14 +57,19 @@ async def get_user_name_from_client(message: types.Message, session_maker: sessi
                         user_number=None,
                         )
         await state.clear()
+
         text = _(ru_texts['bot_greeting'], selected_language)
         reply_markup = await inline_button.action_for_get_info(user_id, session_maker)
+        await bot.send_photo(user_id,
+                             photo=FSInputFile(Image_PATH),
+                             caption=text,
+                             reply_markup=reply_markup)
     else:
         text = _(ru_texts['user_number'], selected_language)
         reply_markup = contact_keyboard(user_id)
         await state.set_state(ClientDataState.user_number)
-    await message.answer(text=text,
-                         reply_markup=reply_markup)
+        await message.answer(text=text,
+                             reply_markup=reply_markup)
 
 
 @registration_router.message(ClientDataState.user_number)
@@ -83,8 +90,10 @@ async def get_user_number_from_client(message: types.Message, session_maker: ses
                     user_number=user_data.user_number,
 
                     )
-    await message.answer(text=_(ru_texts['bot_greeting'], selected_language),
-                         reply_markup=await inline_button.action_for_get_info(user_id, session_maker))
+    await bot.send_photo(user_id,
+                         photo=FSInputFile(Image_PATH),
+                         caption=_(ru_texts['bot_greeting'], selected_language),
+                         reply_markup=await inline_button.action_for_get_info(user_id, session_maker), )
 
 
 @registration_router.callback_query(lambda query: query.data in ['ru', 'uzb'])

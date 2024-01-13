@@ -48,10 +48,10 @@ async def tariffs_user_kb(tariffs, user_id, session_maker):
     user_lang = await get_user_language(user_id, session_maker)
     builder = ReplyKeyboardBuilder()  #
     if user_lang == 'uzb':
-        [builder.button(text=f"{tariff.tariff_name_uzb} | {tariff.price} UZS") for tariff in tariffs if
+        [builder.button(text=f"{tariff.tariff_name_uzb}") for tariff in tariffs if
          tariff.tariff_name_uzb != '-']
     else:
-        [builder.button(text=f"{tariff.tariff_name} | {tariff.price} UZS") for tariff in tariffs if
+        [builder.button(text=f"{tariff.tariff_name}") for tariff in tariffs if
          tariff.tariff_name != '-']
     builder.button(text=_(ru_texts['back_for_user'], user_lang))
     builder.adjust(*[2] * len(tariffs), 1)
