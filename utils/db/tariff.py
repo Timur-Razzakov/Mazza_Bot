@@ -15,6 +15,7 @@ class Tariffs(Base):
     description = Column(Text(), nullable=True)
     description_uzb = Column(Text(), nullable=True)
     price = Column(String(255), nullable=False)
+    group_link = Column(String(255), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
 
     # Отношение "один ко многим" с Product
@@ -22,11 +23,12 @@ class Tariffs(Base):
     # Связь с User (обратная ссылка)
     user = relationship("Users", back_populates="tariffs", uselist=False)
 
-    def __init__(self, tariff_name, tariff_name_uzb, price, description, **kw: Any):
+    def __init__(self, tariff_name,group_link, tariff_name_uzb, price, description, **kw: Any):
         super().__init__(**kw)
         self.tariff_name = tariff_name
         self.tariff_name_uzb = tariff_name_uzb
         self.description = description
+        self.group_link = group_link
         self.price = price
 
     @property
@@ -41,6 +43,22 @@ class Tariffs(Base):
 
     def __repr__(self):
         return self.__str__()
+
+    @staticmethod
+    async def get_group_link(id: int, session_maker: sessionmaker):
+        """
+        Получить ссылку на группу по его id
+        :param id:
+        :param session_maker:
+        :return:
+        """
+        async with session_maker() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(Tariffs.group_link)
+                    .filter(Tariffs.id == id)  # type: ignore
+                )
+                return result.scalars().one_or_none()
 
     @staticmethod
     async def get_tariff(id: int, session_maker: sessionmaker):
@@ -88,7 +106,7 @@ class Tariffs(Base):
                     raise ValueError(f"Тариф с таким {tariff_id} не найден!")
 
     @staticmethod
-    async def get_tariff_from_name(tariff_name: str, session_maker: sessionmaker):
+    async def get_group_name(tariff_name: str, session_maker: sessionmaker):
         """
         Получить тариф по его имени
         :param tariff_name:
@@ -117,7 +135,7 @@ class Tariffs(Base):
                 return tariff_name
 
     @staticmethod
-    async def create_tariff(tariff_name: str, tariff_name_uzb: str,
+    async def create_tariff(tariff_name: str,group_link:str, tariff_name_uzb: str,
                             description_uzb: str, price: bool,
                             description: str,
                             session_maker: sessionmaker, ) -> None:
@@ -127,6 +145,7 @@ class Tariffs(Base):
                     tariff_name=tariff_name,
                     tariff_name_uzb=tariff_name_uzb,
                     description=description,
+                    group_link=group_link,
                     description_uzb=description_uzb,
                     price=price,
                 )

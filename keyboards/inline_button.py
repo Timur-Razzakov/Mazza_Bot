@@ -56,3 +56,17 @@ async def join_group_markup(user_id, session_maker):
             ]
         ], resize_keyboard=True,
     )
+
+
+async def add_to_group_markup(user_id, url, session_maker):
+    # Определяем язык пользователя
+    user_lang = await get_user_language(user_id, session_maker)
+    # Реализована клавиатура команды Помощь
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text=_(ru_texts['join_course'], user_lang, ),
+                                     url=url),
+            ]
+        ], resize_keyboard=True,
+    )

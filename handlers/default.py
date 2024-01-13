@@ -16,6 +16,7 @@ from data.translations import _, ru_texts, user_language, uzb_texts
 from handlers.product import get_course_data
 from keyboards import default_kb, admin_kb, inline_button
 from keyboards.default_kb import create_default_markup, cancel_markup, contact_keyboard, about_instar_markup
+from keyboards.inline_button import add_to_group_markup
 from keyboards.language_keyboard import language, language_inline
 from keyboards.payment_confirm_reject_kb import get_payment_confirm_reject_markup, PayConfirmCallback, \
     PayConfirmAction
@@ -473,7 +474,14 @@ async def paid_confirm_reject(
 ):
     user_lang = await get_user_language(callback_query.message.chat.id, session_maker)
     alert_text = None
+    group_link_markup = None
+    group_link = await Tariffs.get_group_link(callback_data.tariff_id, session_maker)
+
     if callback_data.action == PayConfirmAction.CONFIRM:
+        if group_link:
+            group_link_markup = await add_to_group_markup(session_maker=session_maker,
+                                                          user_id=callback_data.user_id, url=group_link)
+
         user: Users = await Users.get_user_by_id(callback_data.user_id, session_maker)
         if user.tariff_id == callback_data.tariff_id:
             alert_text = _(ru_texts['paid_admin_already_confirm'], user_lang)
@@ -500,7 +508,7 @@ async def paid_confirm_reject(
     await callback_query.answer(alert_text, show_alert=True)
     user_send_text = _(ru_texts['paid_user_send_text'], user_lang)
     user_send_text = user_send_text.format(alert_text=alert_text)
-    await bot.send_message(callback_data.user_id, user_send_text)
+    await bot.send_message(callback_data.user_id, user_send_text, reply_markup=group_link_markup)
 
 
 async def update_state(state: FSMContext):
