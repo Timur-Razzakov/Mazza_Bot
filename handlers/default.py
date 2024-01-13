@@ -70,10 +70,6 @@ async def cmd_start(message: types.Message, state: FSMContext, session_maker: se
                              photo=FSInputFile(Image_PATH),
                              caption=_(ru_texts['bot_greeting'], selected_language),
                              reply_markup=await inline_button.action_for_get_info(user_id, session_maker), )
-        await message.answer(
-            text="👋😃",  # Текст сообщения должен быть непустым, можно использовать пробел
-            reply_markup=await default_kb.create_default_markup(user_id, session_maker)
-        )
     else:
         # Запрос выбора языка
         await message.answer("Tilni tanlang:\n\nВыберите язык:", reply_markup=language)
