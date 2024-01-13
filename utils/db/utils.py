@@ -10,14 +10,15 @@ async def get_user_language(user_id, session_maker):
     return user
 
 
-async def delayed_message(product_name, user_id, session_maker, delay, markup, message, ):
+async def delayed_message(product_name, user_id, session_maker, user_lang, delay, markup, message, ):
     """Функция для ожидания отправки сообщения"""
     await asyncio.sleep(delay)
-    await send_product_info(product_name=product_name, user_id=user_id, session_maker=session_maker,
+    await send_product_info(product_name=product_name, user_lang=user_lang, user_id=user_id,
+                            session_maker=session_maker,
                             markup=markup, message=message)
 
 
-async def send_product_info(product_name, user_id, session_maker, markup, message):
+async def send_product_info(product_name, user_lang, user_id, session_maker, markup, message):
     """Функция для отправки различных видео/файлов/фото и если нет, то просто текст"""
     if product_name is None:
         await bot.send_message(user_id, message, reply_markup=markup)
@@ -30,7 +31,11 @@ async def send_product_info(product_name, user_id, session_maker, markup, messag
         return
     file_id = product_info.file_id
     file_type = product_info.file_type
-    description = product_info.description
+    data = {
+        'ru': 'description',
+        'uzb': 'description_uzb'
+    }
+    description = getattr(product_info, data.get(user_lang))
 
     if file_id and file_type:
         data = {

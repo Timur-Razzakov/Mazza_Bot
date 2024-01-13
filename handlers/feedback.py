@@ -22,15 +22,13 @@ feedback_router = Router(name=__name__)
 async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker: sessionmaker, ):
     user_id = callback_query.message.chat.id
     await callback_query.answer()
-    print(234234234234234234)
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
-    print(234234, user_lang)
 
     product_name = _(ru_texts['get_bonus_lesson'], user_lang).upper()
-    print(88888888888888888,product_name)
     markup = await default_kb.create_default_markup(user_id, session_maker)
-    await send_product_info(product_name, user_id, session_maker, markup, message=None)
+    await send_product_info(product_name=product_name, user_lang=user_lang, user_id=user_id,
+                            session_maker=session_maker, markup=markup, message=None)
     # Задержка перед отправкой следующего сообщения
     """
     если ставлю await, то не срабатывает относительно указанного времени запуска, 
@@ -38,6 +36,7 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
     """
     asyncio.create_task(delayed_message(product_name=None, user_id=user_id,
                                         delay=1200,
+                                        user_lang=user_lang,
                                         message=_(ru_texts['check_watching_video'], user_lang),
                                         session_maker=session_maker,
                                         markup=await markup_checked_watching_video(user_id, session_maker)))
@@ -46,6 +45,7 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
         delayed_message(product_name=ru_texts['pre_order'].upper(),
                         user_id=user_id,
                         delay=86400,
+                        user_lang=user_lang,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker), ))
@@ -53,6 +53,7 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
         delayed_message(product_name=ru_texts['announcement'].upper(),
                         user_id=user_id,
                         delay=88000,
+                        user_lang=user_lang,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker), ))
@@ -60,6 +61,7 @@ async def cmd_send_text_media(callback_query: types.CallbackQuery, session_maker
         delayed_message(product_name=ru_texts['reasons_for_admission'].upper(),
                         user_id=user_id,
                         delay=172800,
+                        user_lang=user_lang,
                         session_maker=session_maker,
                         message=None,
                         markup=await inline_button.join_group_markup(user_id, session_maker)))
