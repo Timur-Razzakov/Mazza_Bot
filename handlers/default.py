@@ -92,7 +92,6 @@ COMMANDS = {
 }
 relevant_keys = ['course_questions', 'suitable_for_me', 'earn_after_training']
 relevant_commands = [uzb_texts[key] for key in relevant_keys] + [ru_texts[key] for key in relevant_keys]
-print(234234234, relevant_commands)
 
 @default_router.message(
     lambda message: message.text in relevant_commands)
@@ -103,7 +102,6 @@ async def cmd_answer_for_question(message: types.Message, session_maker: session
     :param state:
     :return:
     """
-    print(234324234, message.text )
     user_id = message.chat.id
     # Определяем язык пользователя
     user_lang = await get_user_language(user_id, session_maker)
@@ -209,7 +207,12 @@ async def process_direction(message: types.Message, state: FSMContext, session_m
     product_info = await Products.get_product_from_name(product_name, session_maker)
     file_id = product_info.file_id
     file_type = product_info.file_type
-    description = product_info.description
+    user_lang = await get_user_language(user_id, session_maker)
+    data = {
+        'ru': 'description',
+        'uzb': 'description_uzb'
+    }
+    description = getattr(product_info, data.get(user_lang))
     if file_id and file_type:
 
         data = {
