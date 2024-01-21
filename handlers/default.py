@@ -284,7 +284,7 @@ async def cmd_select_tariff(
             text = _(ru_texts['repurchase_tariff'], user_lang)
             reply_markup = await default_kb.create_default_markup(user_id=user_id,
                                                                   session_maker=session_maker)
-        await bot.send_message(user_id, message=text, reply_markup=reply_markup)
+        await bot.send_message(user_id, text=text, reply_markup=reply_markup)
         await state.clear()
         return
     # Создаём клавиатуру только с кнопкой "назад" чтобы удалить
