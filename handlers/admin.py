@@ -65,13 +65,15 @@ async def download_excel(message: types.Message, session_maker):
     wb = Workbook()
     sh1 = wb.active
     sh1.title = 'Report'
-    sh1.append(('user_id', 'name', 'phone', 'lang', 'tariff'))
+    sh1.append(('№', 'user_id', 'name', 'phone', 'lang', 'tariff'))
+    user_number = 0
     for user, tariff in users_tariffs:
+        user_number += 1
         sh1.append(
-            (
-                user.user_id, user.name, user.phone, user.lang,
-                tariff.tariff_name if tariff else 'Нет'
-            )
+            (user_number,
+             user.user_id, user.name, user.phone, user.lang,
+             tariff.tariff_name if tariff else 'Нет'
+             )
         )
 
     wb.save('report.xlsx')
