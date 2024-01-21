@@ -39,8 +39,8 @@ async def create_default_markup(user_id, session_maker):
     return ReplyKeyboardMarkup(
         keyboard=[
             [
+                KeyboardButton(text=_(ru_texts['tariffs'], user_lang)),
                 KeyboardButton(text=_(ru_texts['about_instar'], user_lang)),
-                KeyboardButton(text=_(ru_texts['suitable_for_me'], user_lang)),
 
             ],
             [
@@ -48,11 +48,12 @@ async def create_default_markup(user_id, session_maker):
                 KeyboardButton(text=_(ru_texts['course_questions'], user_lang)),
             ],
             [
+
                 KeyboardButton(text=_(ru_texts['earn_after_training'], user_lang)),
                 KeyboardButton(text=_(ru_texts['help'], user_lang)),
             ],
             [
-                KeyboardButton(text=_(ru_texts['tariffs'], user_lang)),
+                KeyboardButton(text=_(ru_texts['suitable_for_me'], user_lang)),
                 KeyboardButton(text=_(ru_texts['language'], user_lang)),
             ]
         ],

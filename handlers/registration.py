@@ -35,7 +35,6 @@ async def handle_language_selection(message: types.Message, session_maker: sessi
     user_language[user_id] = user_data.lang
     # Получаем язык пользователя и отправляем соответствующее сообщение
     selected_language = user_language.get(user_id, "ru")  # По умолчанию, если язык не задан, используем 'ru'
-    await message.answer(text=_(ru_texts['info_about_registration'], selected_language))
     await message.answer(text=_(ru_texts['user_name'], selected_language),
                          reply_markup=await cancel_markup(user_id, session_maker))
     await state.set_state(ClientDataState.user_name)

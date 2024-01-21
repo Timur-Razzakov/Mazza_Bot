@@ -93,6 +93,7 @@ COMMANDS = {
 relevant_keys = ['course_questions', 'suitable_for_me', 'earn_after_training']
 relevant_commands = [uzb_texts[key] for key in relevant_keys] + [ru_texts[key] for key in relevant_keys]
 
+
 @default_router.message(
     lambda message: message.text in relevant_commands)
 async def cmd_answer_for_question(message: types.Message, session_maker: sessionmaker, state: FSMContext):
@@ -257,6 +258,7 @@ async def cmd_get_tariffs(message: types.Message, session_maker: sessionmaker, s
     await process_tariffs(user_id, state, session_maker)
 
 
+# ВОТ СЮДА
 @default_router.message(AllTariffsState.tariff_name)
 async def cmd_select_tariff(
         message: types.Message,
@@ -265,11 +267,26 @@ async def cmd_select_tariff(
 ):
     user_id = message.chat.id
     user_lang = await get_user_language(user_id, session_maker)
-
+    # получаем пользователя для сравнения есть ли у него тариф
+    user = await Users.get_user_by_id(user_id, session_maker)
     tariff: Tariffs = await Tariffs.get_tariff_by_name_and_price(
         tariff_name=message.text,
         lang=user_lang, session_maker=session_maker
     )
+    if user.tariff_id == tariff.id:
+        # если пользователь уже купил тариф, то просто приглашаем в группу
+        group_link = await Tariffs.get_group_link(tariff.id, session_maker)
+        if group_link:
+            text = _(ru_texts['repurchase_tariff'], user_lang)
+            reply_markup = await add_to_group_markup(user_id=user_id, url=group_link,
+                                                     session_maker=session_maker)
+        else:
+            text = _(ru_texts['repurchase_tariff'], user_lang)
+            reply_markup = await default_kb.create_default_markup(user_id=user_id,
+                                                                  session_maker=session_maker)
+        await bot.send_message(user_id, message=text, reply_markup=reply_markup)
+        await state.clear()
+        return
     # Создаём клавиатуру только с кнопкой "назад" чтобы удалить
     # название тарифов из меню и оставить только кнопку "назад"
     markup = await get_back_kb_button(user_id, session_maker)
