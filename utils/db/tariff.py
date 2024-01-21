@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, select, Text, Boolean, DateTime, func, ForeignKey
+from sqlalchemy import Column, Integer, String, select, Text, DateTime, func
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship

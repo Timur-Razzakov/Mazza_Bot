@@ -18,6 +18,9 @@ markup = ReplyKeyboardMarkup(
             KeyboardButton(text=ru_texts['add_tariff']),
             KeyboardButton(text=ru_texts['all_tariffs'])
         ],
+        [
+            KeyboardButton(text=ru_texts['download_excel']),
+        ],
     ],
     resize_keyboard=True, one_time_keyboard=True)
 

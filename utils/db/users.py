@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
 
+from data import config
 from .tariff import Tariffs
 from .base import Base
 from .product import Products
@@ -193,3 +194,19 @@ class Users(Base):
                 select(Users).filter_by(user_id=user_id)
             )
             return user.scalars().one_or_none()
+
+    @staticmethod
+    async def get_all_users_tariffs(session_maker: sessionmaker):
+        """
+        Получаем всех пользователей и их тарифы для отчёта в excel,
+        без учёта администраторов.
+        """
+        async with (session_maker() as session):
+            users_raw = await session.execute(
+                select(Users, Tariffs).where(
+                    ~Users.user_id.in_(config.ADMIN_ID)
+                ).outerjoin(
+                    Tariffs, Users.tariff_id == Tariffs.id
+                )
+            )
+            return users_raw.fetchall()
