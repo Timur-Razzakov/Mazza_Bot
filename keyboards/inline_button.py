@@ -18,9 +18,9 @@ async def action_for_get_info(user_id, session_maker):
                                      callback_data="get_bonus_lesson"),
             ],
             [
-                InlineKeyboardButton(text=_(ru_texts['join_course'], user_lang, ),
-                                     url="https://t.me/+ZQ1pvhiAJnwxOThi",
-                                     callback_data="join_course"),
+                InlineKeyboardButton(text=_(ru_texts['tariffs'], user_lang, ),
+                                     # url="https://t.me/+ZQ1pvhiAJnwxOThi",
+                                     callback_data="tariffs"),
             ]
         ], resize_keyboard=True,
     )
