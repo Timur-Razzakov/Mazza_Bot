@@ -97,7 +97,7 @@ async def about_instar_markup(user_id, session_maker):
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=ru_texts['tariffs'], callback_data="tariffs"),
+                InlineKeyboardButton(text=_(ru_texts['tariffs'],user_lang), callback_data="tariffs"),
 
             ],
         ],
