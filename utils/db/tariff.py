@@ -146,6 +146,7 @@ class Tariffs(Base):
                     tariff_name_uzb=tariff_name_uzb,
                     description=description,
                     description_uzb=description_uzb,
+                    group_link=None,
                     price=price,
                 )
                 try:
