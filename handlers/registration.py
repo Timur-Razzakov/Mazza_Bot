@@ -17,8 +17,7 @@ registration_router = Router(name=__name__)
 
 
 # Создаем функцию для инициализации get_user_data
-@sync_to_async
-def get_user_data(user_id):
+async def get_user_data(user_id):
     if user_id not in registration_data:
         registration_data[user_id] = RegistrationData()
     return registration_data[user_id]
@@ -40,9 +39,13 @@ async def handle_language_selection(message: types.Message, session_maker: sessi
     await state.set_state(ClientDataState.user_name)
 
 
+# фото для главной страницы, прописал так чтобы ускорить обрабоку
+photo = 'AgACAgIAAxkBAAIRemWyLukJ_2v8pnbRi70MohZxsrBmAAKC0zEbXQeQSTlK9phEgnr1AQADAgADeQADNAQ'
 @registration_router.message(ClientDataState.user_name)
 async def get_user_name_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
+    # photo = message.photo[-1].file_id
+    # print(photo)
     user_data = await get_user_data(user_id)
     user_data.user_name = message.text
     selected_language = user_data.lang  # По умолчанию, если язык не задан, используем 'ru'
@@ -60,7 +63,7 @@ async def get_user_name_from_client(message: types.Message, session_maker: sessi
         text = _(ru_texts['bot_greeting'], selected_language)
         reply_markup = await inline_button.action_for_get_info(user_id, session_maker)
         await bot.send_photo(user_id,
-                             photo=FSInputFile(Image_PATH),
+                             photo=photo,
                              caption=text,
                              reply_markup=reply_markup)
     else:
@@ -75,22 +78,21 @@ async def get_user_name_from_client(message: types.Message, session_maker: sessi
 async def get_user_number_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
     user_data = await get_user_data(user_id)
+    selected_language = user_data.lang  # По умолчанию, если язык не задан, используем 'ru'
+    await state.clear()
     if message.text:
         user_data.user_number = message.text
     else:
         user_data.user_number = message.contact.phone_number
 
-    selected_language = user_data.lang  # По умолчанию, если язык не задан, используем 'ru'
-    await state.clear()
     await save_user(user_id=user_data.user_id,
                     user_name=user_data.user_name,
                     user_lang=selected_language,
                     session_maker=session_maker,
-                    user_number=user_data.user_number,
+                    user_number=user_data.user_number)
 
-                    )
     await bot.send_photo(user_id,
-                         photo=FSInputFile(Image_PATH),
+                         photo=photo,
                          caption=_(ru_texts['bot_greeting'], selected_language),
                          reply_markup=await inline_button.action_for_get_info(user_id, session_maker), )
 
