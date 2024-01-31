@@ -213,6 +213,8 @@ class Users(Base):
                     ~Users.user_id.in_(config.ADMIN_ID)
                 ).outerjoin(
                     Tariffs, Users.tariff_id == Tariffs.id
+                ).order_by(
+                    Users.created_at.desc()
                 )
             )
             return users_raw.fetchall()
