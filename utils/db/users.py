@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import Optional, List
 
-from sqlalchemy import Column, Integer, String, ForeignKey, select, BigInteger
+import pytz
+from sqlalchemy import Column, Integer, String, ForeignKey, select, BigInteger, DateTime, func
 from sqlalchemy.dialects.postgresql import Any
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import sessionmaker, relationship
@@ -10,7 +12,10 @@ from .tariff import Tariffs
 from .base import Base
 from .product import Products
 
+tz = pytz.timezone('Asia/Tashkent')
+aware_datetime = datetime.now(tz)
 
+naive_datetime = aware_datetime.replace(tzinfo=None)
 # Определяем класс модели для таблицы пользователя
 class Users(Base):
     __tablename__ = 'users'
@@ -23,6 +28,7 @@ class Users(Base):
     tariff_id = Column(Integer, ForeignKey('tariffs.id'), nullable=True)
     # Отношение с Tariffs
     tariffs = relationship("Tariffs", back_populates="user")
+    created_at = Column(DateTime, default=naive_datetime)
 
     def __init__(self, user_id, phone, tariff_id, name, lang, **kw: Any):
         super().__init__(**kw)

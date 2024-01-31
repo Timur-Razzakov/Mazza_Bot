@@ -40,7 +40,7 @@ async def handle_language_selection(message: types.Message, session_maker: sessi
 
 
 # фото для главной страницы, прописал так чтобы ускорить обрабоку
-photo = 'AgACAgIAAxkBAAIRemWyLukJ_2v8pnbRi70MohZxsrBmAAKC0zEbXQeQSTlK9phEgnr1AQADAgADeQADNAQ'
+photo = 'AgACAgIAAxkBAAIcUmW6LBUYAAHIYH5PC17eWHmvR-nqbAACaNMxG6Tw0UnxYwYIruEKugEAAwIAA3kAAzQE'
 @registration_router.message(ClientDataState.user_name)
 async def get_user_name_from_client(message: types.Message, session_maker: sessionmaker, state: FSMContext):
     user_id = message.chat.id
