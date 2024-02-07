@@ -15,7 +15,6 @@ from .product import Products
 tz = pytz.timezone('Asia/Tashkent')
 aware_datetime = datetime.now(tz)
 
-naive_datetime = aware_datetime.replace(tzinfo=None)
 # Определяем класс модели для таблицы пользователя
 class Users(Base):
     __tablename__ = 'users'
@@ -28,7 +27,7 @@ class Users(Base):
     tariff_id = Column(Integer, ForeignKey('tariffs.id'), nullable=True)
     # Отношение с Tariffs
     tariffs = relationship("Tariffs", back_populates="user")
-    created_at = Column(DateTime, default=naive_datetime)
+    created_at = Column(DateTime, default=datetime.now)
 
     def __init__(self, user_id, phone, tariff_id, name, lang, **kw: Any):
         super().__init__(**kw)
